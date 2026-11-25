@@ -1,0 +1,1059 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inventário de Dados da SRE – ANPD</title>
+<meta name="description" content="Plano de Dados Abertos da Superintendência de Regulação da ANPD: bases de dados, consultas à sociedade e publicações, com acesso direto aos processos no SEI e aos documentos.">
+<style>
+/* ============================================================
+   ANPD — Inventário de Dados da SRE / Plano de Dados Abertos
+   Arquivo único: HTML + CSS + JS, sem dependência externa.
+
+   MODO EMBUTIDO: ?embed=1 na URL (ou class="embed" no <body>)
+   oculta a barra gov.br, o cabeçalho e o rodapé, para quando a
+   página já estiver dentro do portal.
+
+   PALETA: azul institucional gov.br (#1351B4) como cor de ação;
+   as séries usam azul, verde, magenta e roxo — conjunto verificado
+   quanto à distinção entre séries, com os rótulos de cada barra
+   garantindo a leitura para quem não distingue as cores.
+   ============================================================ */
+
+:root{
+  --azul:#1351B4;
+  --azul-80:#0C326F;
+  --azul-escuro:#071D41;
+  --azul-claro:#E8EFFE;
+  --verde:#168821;
+  --magenta:#E5007D;
+  --roxo:#7B2D8B;
+  --texto:#333333;
+  --texto-2:#555555;
+  --borda:#E5E7EB;
+  --cinza-bg:#FAFAFA;
+  --gray-2:#F8F8F8;
+  --raio:4px;
+  --pilula:100em;
+}
+
+*,*::before,*::after{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:#fff;color:var(--texto);
+  font-family:'Rawline','Raleway','Helvetica Neue',Arial,Helvetica,sans-serif;
+  font-size:16px;line-height:1.45;-webkit-font-smoothing:antialiased;
+}
+img{max-width:100%}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+a{color:inherit}
+input,select{font:inherit}
+:focus-visible{outline:2px solid var(--azul);outline-offset:2px}
+
+/* ---------- barra gov.br ---------- */
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;
+  padding:8px 24px;font-size:13px;background:#fff;border-bottom:1px solid var(--borda)}
+.topbar .esq,.topbar .dir{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.topbar .govbr{font-weight:800;font-size:17px;letter-spacing:-.01em;color:var(--azul-80);text-decoration:none}
+.topbar .govbr i{font-style:normal;color:var(--verde)}
+.topbar .orgao{color:var(--texto-2);font-size:12.5px}
+.topbar a{color:var(--azul);text-decoration:none}
+.topbar a:hover{text-decoration:underline}
+.btn-pill{display:inline-flex;align-items:center;gap:6px;border-radius:var(--pilula);
+  padding:5px 14px;font-size:13px;font-weight:600;text-decoration:none;white-space:nowrap}
+.btn-pill.out{border:1px solid var(--azul);color:var(--azul)}
+.btn-pill.out:hover{background:var(--azul-claro);text-decoration:none}
+.btn-pill.fill{background:var(--azul);color:#fff}
+.btn-pill.fill:hover{background:var(--azul-80);text-decoration:none}
+
+/* ---------- marca ---------- */
+.header{display:flex;align-items:center;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  padding:14px 24px;background:#fff;border-bottom:1px solid var(--borda)}
+.header .id{display:flex;align-items:center;gap:14px;text-decoration:none;min-width:0}
+.header .id img{height:44px;width:auto;flex-shrink:0;display:block}
+.header .nome{color:var(--texto);font-size:19px;font-weight:400;line-height:1.2;
+  padding-left:14px;border-left:1px solid var(--borda)}
+.header nav{display:flex;align-items:center;gap:22px;font-size:14px;flex-wrap:wrap}
+.header nav a{color:var(--texto-2);text-decoration:none}
+.header nav a:hover{color:var(--azul);text-decoration:underline}
+.header nav a.ativo{color:var(--azul);font-weight:600}
+
+.subnav{display:flex;border-bottom:1px solid var(--borda);padding:0 24px;background:#F8F8F8;overflow-x:auto}
+.subnav button{padding:10px 16px;font-size:14px;white-space:nowrap;border-bottom:2px solid transparent;
+  color:var(--texto-2);transition:color .15s,border-color .15s}
+.subnav button[aria-current="page"]{border-color:var(--azul);color:var(--azul);font-weight:600}
+
+.breadcrumb{padding:16px 24px 8px;font-size:14px;color:var(--azul)}
+.breadcrumb a{text-decoration:none}
+.breadcrumb a:hover{text-decoration:underline}
+.breadcrumb .sep{margin:0 6px;color:#9CA3AF}
+.breadcrumb .atual{color:#6B7280}
+
+body.embed .topbar,body.embed .header,body.embed .breadcrumb,body.embed .rodape{display:none}
+body.embed .page-head,body.embed .painel-head{padding-top:24px}
+
+/* ---------- cabeçalho de página ---------- */
+.page-head,.painel-head{padding:0 24px 18px}
+.painel-head{border-bottom:1px solid var(--borda)}
+.page-head{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;flex-wrap:wrap}
+.page-head h1,.painel-head h1{margin:0 0 8px;font-size:32px;line-height:1.2;font-weight:300;color:var(--texto)}
+.page-head p,.painel-head p{margin:0;max-width:80ch;font-size:14px;color:#4B5563;line-height:1.6}
+
+.viewtoggle{display:flex;border:1px solid var(--borda);border-radius:var(--raio);overflow:hidden;height:38px;margin-top:4px}
+.viewtoggle button{padding:8px;color:#888;display:flex;align-items:center;transition:background .15s,color .15s}
+.viewtoggle button+button{border-left:1px solid var(--borda)}
+.viewtoggle button[aria-pressed="true"]{background:var(--azul-claro);color:var(--azul)}
+
+/* ---------- números ---------- */
+.tiles{display:flex;flex-wrap:wrap;gap:26px;align-items:flex-end;padding:20px 24px 0}
+.tile .rot{margin:0;font-size:12px;color:#6B7280;letter-spacing:.06em;text-transform:uppercase}
+.tile .num{margin:2px 0 0;font-weight:700;color:var(--texto);line-height:1.05;font-size:26px}
+.tile.hero .num{font-size:52px;color:var(--azul)}
+.tile .sub{margin:2px 0 0;font-size:12px;color:#6B7280;max-width:26ch}
+.tile+.tile{border-left:1px solid var(--borda);padding-left:26px}
+
+.painel-ctrl{padding:20px 24px 0;display:flex;align-items:center;gap:20px;flex-wrap:wrap;font-size:14px;color:#4B5563}
+.painel-ctrl label{display:flex;align-items:center;gap:6px;cursor:pointer}
+.painel-ctrl input{accent-color:var(--azul)}
+
+/* ---------- gráficos ---------- */
+.secao-titulo{padding:26px 24px 0;font-size:12px;font-weight:700;color:#4B5563;
+  letter-spacing:.14em;text-transform:uppercase;margin:0}
+.graficos{padding:14px 24px 34px;display:grid;gap:20px;align-items:start;
+  grid-template-columns:repeat(auto-fit,minmax(360px,1fr))}
+.grafico{margin:0;min-width:0;border:1px solid var(--borda);border-radius:var(--raio);
+  padding:18px 20px 20px;background:#fff}
+.grafico.largo{grid-column:1/-1}
+.grafico figcaption{margin-bottom:14px}
+.grafico h3{margin:0;font-size:15px;font-weight:700;color:var(--texto)}
+.grafico .leg{margin:3px 0 0;font-size:12px;color:#6B7280;line-height:1.45}
+
+.legenda{list-style:none;display:flex;flex-wrap:wrap;gap:16px;margin:0 0 14px;padding:0;font-size:12.5px;color:#4B5563}
+.legenda li{display:flex;align-items:center;gap:6px}
+.legenda .sw{width:10px;height:10px;border-radius:2px;display:block}
+
+.barras{display:flex;flex-direction:column;gap:9px}
+.linha-b{display:grid;grid-template-columns:minmax(96px,210px) 1fr auto;align-items:center;gap:12px}
+.linha-b .rot{font-size:13px;color:#4B5563;line-height:1.25;overflow-wrap:break-word;word-break:normal}
+.linha-b .trilho{height:14px;display:flex;align-items:center}
+.linha-b .barra{display:block;height:14px;border-radius:0 4px 4px 0;min-width:2px}
+.linha-b .val{font-size:13px;color:#374151;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.linha-b .val i{font-style:normal;font-weight:400;color:#9CA3AF;margin-left:4px}
+
+.colunas{display:flex;align-items:flex-end;gap:12px;height:190px;padding-top:20px;overflow-x:auto}
+.coluna{display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;flex:1;min-width:44px;height:100%}
+.coluna .cap{font-size:12px;color:#374151;font-weight:600;font-variant-numeric:tabular-nums}
+.coluna .pilha{width:100%;max-width:26px;display:flex;flex-direction:column-reverse;gap:2px;min-height:2px}
+.coluna .pilha span{display:block;min-height:3px}
+.coluna .pilha span:last-child{border-radius:4px 4px 0 0}
+.coluna .ano{font-size:12px;color:#6B7280;font-variant-numeric:tabular-nums}
+
+.tab-grafico{width:100%;border-collapse:collapse;font-size:13px}
+.tab-grafico th{padding:6px 8px;font-size:11px;border-bottom:1px solid var(--borda);
+  text-transform:uppercase;letter-spacing:.05em;color:#4B5563;text-align:left}
+.tab-grafico td{padding:6px 8px;border-bottom:1px solid #F3F4F6;vertical-align:middle}
+.tab-grafico td.n,.tab-grafico th.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.tab-grafico .pt{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:7px}
+
+/* ---------- abas e filtros ---------- */
+.tipotabs{border-bottom:1px solid var(--borda);padding:0 24px}
+.tipotabs .trilho{display:flex;overflow-x:auto}
+.tipotabs button{display:flex;align-items:center;gap:6px;padding:12px 16px;font-size:14px;white-space:nowrap;
+  border-bottom:2px solid transparent;color:var(--texto-2);flex-shrink:0}
+.tipotabs button[aria-selected="true"]{border-color:var(--azul);color:var(--azul);font-weight:600}
+.tipotabs .ico{display:flex;color:#AAA}
+.tipotabs button[aria-selected="true"] .ico{color:var(--azul)}
+.tipotabs .cont{font-size:12px;padding:1px 7px;border-radius:999px;margin-left:2px;font-weight:600;
+  background:#E0E0E0;color:#666}
+.tipotabs button[aria-selected="true"] .cont{background:var(--azul);color:#fff}
+
+.filtros{padding:12px 24px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;
+  border-bottom:1px solid #F3F4F6;background:rgba(249,250,251,.6)}
+.busca{position:relative;display:block}
+.busca .lupa{position:absolute;left:12px;top:50%;transform:translateY(-50%);display:flex;color:#9CA3AF;pointer-events:none}
+.busca input{padding:8px 14px 8px 34px;border:1px solid #D1D5DB;border-radius:var(--raio);
+  font-size:14px;width:300px;max-width:100%;background:#fff}
+.busca input:focus{outline:2px solid var(--azul);outline-offset:-1px;border-color:var(--azul)}
+.grupo{display:flex;align-items:center;gap:6px;font-size:14px;flex-wrap:wrap}
+.grupo .rot{color:#6B7280}
+.chip{padding:4px 12px;border:1px solid #CCC;border-radius:999px;font-size:14px;background:transparent;
+  color:#333;transition:all .15s}
+.chip:hover{border-color:#9CA3AF}
+.chip[aria-pressed="true"]{background:var(--azul);border-color:var(--azul);color:#fff}
+.limpar{font-size:14px;color:var(--azul);text-decoration:underline}
+
+.resumo{padding:12px 24px;display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}
+.resumo p{margin:0;font-size:14px;color:#374151}
+.resumo .dir{display:flex;align-items:center;gap:14px;flex-wrap:wrap}
+.resumo .data{font-size:12px;color:#9CA3AF}
+.btn-csv{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:600;color:var(--azul);
+  border:1px solid var(--azul);border-radius:var(--pilula);padding:5px 14px;background:#fff}
+.btn-csv:hover{background:var(--azul-claro)}
+
+/* ---------- cards ---------- */
+.grade{padding:0 24px 40px;display:grid;gap:16px;align-items:start;
+  grid-template-columns:repeat(auto-fill,minmax(340px,1fr))}
+.card{border:1px solid var(--borda);border-radius:var(--raio);padding:18px;background:#fff;
+  display:flex;flex-direction:column;gap:11px;transition:box-shadow .15s;border-top:3px solid var(--azul)}
+.card:hover{box-shadow:0 4px 12px rgba(0,0,0,.08)}
+.card .tipo{display:flex;align-items:center;gap:6px;font-size:11.5px;font-weight:700;
+  letter-spacing:.08em;text-transform:uppercase}
+.card h3{margin:0;font-size:16px;font-weight:700;line-height:1.3;color:var(--texto)}
+.card .ementa{margin:0;font-size:13.5px;color:#4B5563;line-height:1.5}
+.card dl{margin:0;display:grid;grid-template-columns:auto 1fr;gap:3px 10px;font-size:12.5px}
+.card dt{color:#6B7280}
+.card dd{margin:0;color:#374151;overflow-wrap:break-word}
+.card dd a{color:var(--azul);font-weight:600;text-decoration:none}
+.card dd a:hover{text-decoration:underline}
+.numero{display:flex;align-items:baseline;gap:7px;padding:9px 12px;background:var(--gray-2);border-radius:var(--raio)}
+.numero .n{font-size:22px;font-weight:700;color:var(--azul);font-variant-numeric:tabular-nums}
+.numero .u{font-size:12.5px;color:#4B5563}
+.numero.vazio .n{font-size:14px;color:#6B7280;font-weight:600}
+.docs{display:flex;flex-wrap:wrap;gap:8px;margin-top:auto;padding-top:2px}
+.doc{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:600;
+  border:1px solid var(--azul);color:var(--azul);border-radius:var(--pilula);padding:4px 12px;text-decoration:none}
+.doc:hover{background:var(--azul-claro)}
+.doc.sem{border-color:#D1D5DB;color:#6B7280;cursor:default}
+.doc.sei{border-color:var(--azul-80);color:var(--azul-80)}
+.doc.sei:hover{background:#E7EDF7}
+.vazio-lista{padding:40px 24px;color:#6B7280;font-size:14px}
+
+/* ---------- bases de dados ---------- */
+.bases{padding:0 24px 40px;display:grid;gap:16px;align-items:start;
+  grid-template-columns:repeat(auto-fill,minmax(400px,1fr))}
+.base{border:1px solid var(--borda);border-left:3px solid var(--azul);border-radius:var(--raio);
+  padding:20px;background:#fff;display:flex;flex-direction:column;gap:14px}
+.base h3{margin:0;font-size:15.5px;font-weight:700;line-height:1.4;color:var(--texto)}
+.atributos{margin:0;display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px 18px}
+.atributos div{min-width:0}
+.atributos dt{font-size:11px;color:#6B7280;text-transform:uppercase;letter-spacing:.05em;margin-bottom:1px}
+.atributos dd{margin:0;font-size:13.5px;color:var(--texto);font-weight:600}
+.atributos dd.sim{color:var(--verde)}
+.atributos dd.nao{color:#6B7280}
+
+/* ---------- tabelas ---------- */
+.tabela-wrap{margin:0 24px 40px;border:1px solid var(--borda);border-radius:var(--raio);overflow-x:auto}
+table.catalogo{width:100%;border-collapse:collapse;font-size:14px;min-width:940px}
+table.catalogo thead tr{background:#F3F3F3}
+table.catalogo th{text-align:left;padding:12px 16px;font-size:12px;font-weight:700;color:#4B5563;
+  text-transform:uppercase;letter-spacing:.05em;border-bottom:1px solid var(--borda)}
+table.catalogo tbody tr{border-bottom:1px solid #F3F4F6}
+table.catalogo tbody tr:nth-child(even){background:var(--cinza-bg)}
+table.catalogo tbody tr:hover{background:rgba(219,234,254,.4)}
+table.catalogo td{padding:12px 16px;vertical-align:top}
+table.catalogo .t1{margin:0;font-weight:600;color:var(--texto);line-height:1.35}
+table.catalogo .t2{margin:3px 0 0;font-size:12px;color:#6B7280;line-height:1.45}
+table.catalogo a.sei-link{color:var(--azul);font-weight:600;text-decoration:none;white-space:nowrap}
+table.catalogo a.sei-link:hover{text-decoration:underline}
+.badge{font-size:11.5px;font-weight:700;padding:2px 8px;border-radius:4px;display:inline-block;
+  white-space:nowrap;letter-spacing:.03em}
+
+.rodape{padding:28px 24px 34px;background:var(--azul-escuro);color:#fff;font-size:12.5px;margin-top:8px}
+.rodape .marca-rod{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.rodape .marca-rod img{height:38px;width:auto;display:block;background:#fff;border-radius:var(--raio);padding:5px 8px}
+.rodape .marca-rod span{font-size:14px}
+.rodape p{margin:0 0 5px;color:rgba(255,255,255,.78);max-width:100ch;line-height:1.55}
+.rodape a{color:#fff}
+
+@media (max-width:760px){
+  .topbar .dir a:not(.btn-pill){display:none}
+  .topbar .btn-pill.out{display:none}
+  .header nav{display:none}
+  .header .id img{height:38px}
+  .header .nome{font-size:16px}
+}
+@media (max-width:520px){
+  .topbar,.header,.subnav,.breadcrumb,.page-head,.painel-head,.tiles,.painel-ctrl,
+  .graficos,.secao-titulo,.filtros,.resumo,.tipotabs,.rodape{padding-left:16px;padding-right:16px}
+  .grade,.bases{padding-left:16px;padding-right:16px}
+  .tabela-wrap{margin-left:16px;margin-right:16px}
+  .graficos,.bases{grid-template-columns:1fr}
+  .grafico{padding:16px}
+  .page-head h1,.painel-head h1{font-size:25px}
+  .tiles{gap:16px}
+  .tile+.tile{border-left:0;padding-left:0}
+  .tile.hero .num{font-size:44px}
+  .linha-b{grid-template-columns:minmax(84px,120px) 1fr auto;gap:8px}
+  .busca,.busca input{width:100%}
+}
+</style>
+</head>
+<body class="embed">
+<div id="app"></div>
+
+<script>
+(function(){
+"use strict";
+
+/* ===========================================================
+   1. DADOS
+   Gerados da planilha "Inventário de Dados SRE — Plano de Dados
+   Abertos", das três abas:
+
+     bases         aba "Dados Gerais"          — bases do inventário
+     instrumentos  aba "Consulta à Sociedade"  — consultas, audiências,
+                                                 tomadas de subsídios
+     publicacoes   aba "Publicações"           — regulamentos, guias,
+                                                 agenda regulatória e outras
+
+   Todos os links da planilha estão preservados, inclusive os
+   hyperlinks embutidos nas células: é de lá que sai o "seiUrl",
+   que abre o processo em sei.anpd.gov.br.
+
+   Atenção às grandezas da aba de participação: "contribuições"
+   (consultas públicas), "contribuintes" (tomadas de subsídios) e
+   "espectadores / participação oral" (audiências) vêm de colunas
+   diferentes, medem coisas diferentes e nunca são somadas entre si.
+   =========================================================== */
+
+var DADOS = {"tipos":[{"id":"cp","label":"Consultas Públicas","singular":"Consulta Pública","cor":"#1351B4","icone":"balao"},{"id":"ap","label":"Audiências Públicas","singular":"Audiência Pública","cor":"#168821","icone":"pessoa"},{"id":"ts","label":"Tomadas de Subsídios","singular":"Tomada de Subsídios","cor":"#E5007D","icone":"brilho"}],"secoes":[{"id":"reg","label":"Regulamentos","cor":"#1351B4"},{"id":"gui","label":"Guias Orientativos","cor":"#168821"},{"id":"age","label":"Agenda Regulatória","cor":"#E5007D"},{"id":"air","label":"Análises de Impacto Regulatório","cor":"#B85C00"},{"id":"out","label":"Outras Publicações","cor":"#7B2D8B"}],"bases":[{"descricao":"Conjunto de informações sobre as Consultas Públicas do órgão (próprias e em parceria), contendo: ano, número, título do ato normativo, descrição resumida do objeto, período de contribuições, notas técnicas e contribuições recebidas.","atributos":[{"k":"Unidade responsável","v":"SRE"},{"k":"Base passível de abertura","v":"Sim"},{"k":"Base aberta","v":"Sim"},{"k":"Disponível em dados gov.br","v":"Não"},{"k":"Periodicidade de atualização","v":"Anual"},{"k":"Política Pública relacionada, quando aplicável","v":"Não"},{"k":"Possui conteúdo sigiloso","v":"Não"},{"k":"Informação passível de tratamento LGPD","v":"Não"}],"link":"https://www.gov.br/anpd/pt-br/acesso-a-informacao/participacao-social/audiencias-e-consultas-publicas/consultas-publicas"},{"descricao":"Conjunto de informações sobre as Audiências Públicas do órgão, contendo: ano, número, título do ato normativo, descrição resumida do objeto, data de realização, meio de realização/canal transmitido, notas técnicas e documentos correlatos.","atributos":[{"k":"Unidade responsável","v":"SRE"},{"k":"Base passível de abertura","v":"Sim"},{"k":"Base aberta","v":"Sim"},{"k":"Disponível em dados gov.br","v":"Não"},{"k":"Periodicidade de atualização","v":"Anual"},{"k":"Política Pública relacionada, quando aplicável","v":"Não"},{"k":"Possui conteúdo sigiloso","v":"Não"},{"k":"Informação passível de tratamento LGPD","v":"Não"}],"link":"https://www.gov.br/anpd/pt-br/acesso-a-informacao/participacao-social/audiencias-e-consultas-publicas/audiencias-publicas"},{"descricao":"Conjunto de informações sobre Tomadas de Subsídios e demais Ações de Participação Social do órgão, contendo: ano, tipo de instrumento, número, título do estudo/minuta, objeto, número do processo SEI, período de contribuição, notas técnicas e documentos correlatos.","atributos":[{"k":"Unidade responsável","v":"SRE"},{"k":"Base passível de abertura","v":"Sim"},{"k":"Base aberta","v":"Sim"},{"k":"Disponível em dados gov.br","v":"Não"},{"k":"Periodicidade de atualização","v":"Anual"},{"k":"Política Pública relacionada, quando aplicável","v":"Não"},{"k":"Possui conteúdo sigiloso","v":"Não"},{"k":"Informação passível de tratamento LGPD","v":"Não"}],"link":"https://www.gov.br/anpd/pt-br/acesso-a-informacao/participacao-social/outras-acoes"},{"descricao":"Conjunto de informações sobre Regulamentos do órgão, contendo: ano, tipo de instrumento, vigência, ementa, descrição resumida do objeto e URL dos documentos","atributos":[{"k":"Unidade responsável","v":"SRE"},{"k":"Base passível de abertura","v":"Sim"},{"k":"Base aberta","v":"Sim"},{"k":"Disponível em dados gov.br","v":"Não"},{"k":"Periodicidade de atualização","v":"Anual"},{"k":"Política Pública relacionada, quando aplicável","v":"Sim"},{"k":"Possui conteúdo sigiloso","v":"Não"},{"k":"Informação passível de tratamento LGPD","v":"Não"}],"link":"https://www.gov.br/anpd/pt-br/acesso-a-informacao/institucional/atos-normativos/regulamentacoes_anpd"},{"descricao":"Conjunto de informações sobre Guias Orientativos do órgão, contendo: ano, tipo de instrumento, vigência, ementa, descrição resumida do objeto e URL dos documentos","atributos":[{"k":"Unidade responsável","v":"SRE"},{"k":"Base passível de abertura","v":"Sim"},{"k":"Base aberta","v":"Sim"},{"k":"Disponível em dados gov.br","v":"Não"},{"k":"Periodicidade de atualização","v":"Anual"},{"k":"Política Pública relacionada, quando aplicável","v":"Sim"},{"k":"Possui conteúdo sigiloso","v":"Não"},{"k":"Informação passível de tratamento LGPD","v":"Não"}],"link":"https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes"}],"instrumentos":[{"tipo":"cp","nome":"Consulta Pública nº 03/2026","ementa":"Minuta de Resolução que altera o Regulamento de Dosimetria e Aplicação de Sanções Administrativas","sei":"00261.005964/2026-11","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boqyqseQ-y67Jx_x_w_wTAd9FLmpWJa2nZ-app9m9HMRuE","periodo":"15/10/2026 e 30/11/2026","ano":"2026","plataforma":"Brasil Participativo","parceria":"","docs":[{"cat":"Página da Consulta Pública","url":"https://brasilparticipativo.presidencia.gov.br/processes/regulamento-de-dosimetria/f/5854/","ref":""},{"cat":"Despacho de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzMLHE2J8f7eMERDPw2vG2pta-2HzlOBSQ1yNUr-q2kjm8s41MMeJ8_z3yJd-avw1sBuAhkFidRVnOJEhjjDEci_","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzPnrR2q817qsHF1m8CwA5n-zwv5NyHM5-KEne8ccrfYc0QA4mKBk-vMOXpH9bd_ohKffafvJTFw1gfnCRVfx4Lu","ref":""},{"cat":"Contribuições","url":"","ref":"Em elaboração de acordo com o §4º do Art. 9º da Lei nº 13.848/19 e a alínea a) do inciso I do Art. 19 do Decreto nº 10.411/20"},{"cat":"Nota Técnica de Análise de Contribuições","url":"","ref":"Em elaboração de acordo com o § 5º do Art. 9º da Lei nº 13.848/19 e a alínea a) do inciso II do Art. 19 do Decreto nº 10.411/20"}]},{"tipo":"cp","nome":"Consulta Pública nº 02/2026","ementa":"Minuta de Resolução, que dispõe sobre o Processo Regulatório no âmbito da ANPD","sei":"00261.005780/2026-51","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq2AMYUg0bL-dvNSNVf3LeoNh0VxlcBsZ39omsJcOa279","periodo":"06/10/2026 a 23/11/2026","ano":"2026","plataforma":"Brasil Participativo","parceria":"","docs":[{"cat":"Página da Consulta Pública","url":"https://brasilparticipativo.presidencia.gov.br/processes/rev-portaria-16-ANPD","ref":""},{"cat":"Despacho de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzNMXWzE_PLbbGzI5NemZBLyvWED3uiUrPMEqoe48ffLArB3ap2sAUo1qOJ36YQjfa8lNKWHcBA18kMo7TSdCTN1","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzMjeRX3bvNau4ObgirYymmQexW8tFyALUJWUHYx4lrQpzCbpExWqO6ILV5pkI-LFDpEaG5je5LAvS0NolMAB-Sq","ref":""},{"cat":"Contribuições","url":"","ref":"Em elaboração de acordo com o §4º do Art. 9º da Lei nº 13.848/19 e a alínea a) do inciso I do Art. 19 do Decreto nº 10.411/20"},{"cat":"Nota Técnica de Análise de Contribuições","url":"","ref":"Em elaboração de acordo com o § 5º do Art. 9º da Lei nº 13.848/19 e a alínea a) do inciso II do Art. 19 do Decreto nº 10.411/20"}]},{"tipo":"cp","nome":"Consulta Pública nº 01/2026","ementa":"Minuta de Resolução que altera o Regulamento do Processo de Fiscalização e do Processo Administrativo Sancionador no âmbito da ANPD","sei":"00261.005349/2026-12","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq00sL5P0XmVm8-ZhOSyM70neFCcXuWvCHZ7zfyKDvW_X","periodo":"09/09/2026 a 26/10/2026","ano":"2026","plataforma":"Brasil Participativo","parceria":"","docs":[{"cat":"Página da Consulta Pública","url":"https://brasilparticipativo.presidencia.gov.br/processes/regulamento-de-fiscalizacao","ref":""},{"cat":"Despacho de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzNCSphEu39SIB7vHpniR7WsOacBWIJJnRVhIzb7SRT-dhdKZMpVLZdaAb6GQBDKlf6Ak8lCO2lzGFeIzeDBB7zc","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzMPrCZ8Bym-p5MDH9dPPHTZW4OD-A_5Lu6qrtgigrEptUz1feNAacnqh-UgYPvnGeyHZEgXxAV5vIlupvHmmRyk","ref":""},{"cat":"Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq00sL5P0XmVm8-ZhOSyM70neFCcXuWvCHZ7zfyKDvW_X","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"","ref":"Em elaboração de acordo com o § 5º do Art. 9º da Lei nº 13.848/19 e a alínea a) do inciso II do Art. 19 do Decreto nº 10.411/20"}]},{"tipo":"cp","nome":"Consulta Pública em parceria com a CGU","ementa":"Guia de Transparência e Proteção de Dados Pessoais – promovida pela Controladoria-Geral da União (CGU) e pela Agência Nacional de Proteção de Dados (ANPD)","sei":"00261.004637/2026-41","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq5AXs_HOJmXFNSA546MgAGlpd4FkRaUGy_sHcOLqLkwa","periodo":"09/06/26 a 24/07/2026","ano":"2026","plataforma":"Brasil Participativo","parceria":"Controladoria-Geral da União (CGU)","contribuicoes":225,"docs":[{"cat":"Página da Consulta Pública","url":"https://brasilparticipativo.presidencia.gov.br/processes/guiadadospessoais","ref":""},{"cat":"Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzOxzvWq0Xyo98HrU7OV0CJGQljkvlbkH79XQ3VP9AvFdbsiGThm0ZLMnwprGVfEzJ-7b5vjfo0fPvDDvRYBTziy","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzMBTNDdC__KPdrRaoxGLIrZ7N0xa5LXzh2uzTm8ekXTefh2en-DbGAbrda9DJ-Tym-H8yR2TWkQArA8t49i3GN_","ref":""}]},{"tipo":"cp","nome":"Consulta Pública nº 01/2025","ementa":"Minuta de Regulamento sobre o compartilhamento de dados pessoais no setor público","sei":"00261.005367/2025-13","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boqwVOYaIRBPibhmTOdzzracUteQ43wo-uqO50SBHfgfAv","periodo":"28/10/25 a 12/12/2025","ano":"2025","plataforma":"Participa + Brasil","parceria":"","contribuicoes":433,"docs":[{"cat":"Página da Consulta Pública","url":"https://www.gov.br/participamaisbrasil/regulamento-sobre-o-uso-compartilhado-de-dados-pessoais-pelo-poder-publico","ref":""},{"cat":"Despacho de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzNn0glb6VXDPUawFYCLJDrJEjA2MZui_M0FHTC6Idkk7b-ACUVE_ryaAs6zMnjBZqGdoo62LmVzB0yf04CgUXTD","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzP8oXf3hugj1TtE6-jviIRcth_25xIHHUBcv1-C44o7nHvoHiVMc0jLM5MxUrsef_WU8FOyX72z_JeJefPH82CD","ref":""},{"cat":"Relatório de Análise de Impacto Regulatório - RAIR","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzMWM6vP-Lr2dbohyOyoh90cQ4KP1oHnweODEpVQfjPe46OfFg4el2aWI0YuAU0XS_Fxzf2Prp0oEuU6RJ8RhW3r","ref":""},{"cat":"Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzOvhJhvhAvE0doV-xFZ6ZAGg58O4Hj6-8EGYuB_CIWNKTpnKH4J0LWns3bTdjyg-KC0bWRB2ROijeQLbUmi1I04","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"","ref":"Em elaboração de acordo com o § 5º do Art. 9º da Lei nº 13.848/19 e a alínea a) do inciso II do Art. 19 do Decreto nº 10.411/20"}]},{"tipo":"cp","nome":"Consulta Pública nº 01/2023","ementa":"Minuta de Resolução do Regulamento de Comunicação de Incidente de Segurança com Dados Pessoais","sei":"00261.000098/2021-67","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4gBrFZF4BsZlly0sebTh5WVZr7z9kpCIlfOsjZJj-ikH","periodo":"02/05/2023 a 15/06/2023","ano":"2023","plataforma":"Participa + Brasil","parceria":"","contribuicoes":1491,"docs":[{"cat":"Página da Consulta Pública","url":"https://www.gov.br/participamaisbrasil/regulamento-de-comunicacao-de-incidente-de-seguranca-com-dados-pessoais","ref":""},{"cat":"Despacho de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzP-ogqQehuRocpDjAl22yMpmcpGhTT3O2md64iLoqM92tRTj2Z6--O31wa7TTm9ZEyXgMyLtrSMHJv_bPI_HKVc","ref":""},{"cat":"Despacho de Prorrogação","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzPEsI_I-OHlM6tejU5BKRTxUQgiAfI4EqSVHFgF1TwRP7gzbDlNnjj8dyzC0g1hhg2Va8S_SWml8o05WGc80O4V","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzP5CBEV7z22vyVb_G6EvVVXGI3ns6rQeLJErDvZyrgU5-WoyfEIHe5WiccfELtkffMte_EWzLNZHYe_8SiDctbd","ref":""},{"cat":"Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzP-9Fqr6Dan0YaaRPw_CJ-bbeMo60RV2lkVb2tRdYHfbB1VyLb5xiRqJ9pDkXfsDlhh4LExbEzffTDhfZ4KGVZR","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzOyiDlgP-Fqk3aSoLjb-kG5uiaMd4NKmWytWL3wDKtxYNbtIuWnJ3hBct3q82W4JPYGvsQtf4VF9rQ0bsBJB6ks","ref":""}]},{"tipo":"cp","nome":"Consulta Pública nº 02/2023","ementa":"Minuta de Resolução do Regulamento de Transferências Internacionais de Dados Pessoais e do modelo de cláusulas-padrão contratuais","sei":"00261.000968/2021-06","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4g-dfBqz6Dd-HdYYfGNurqEiU4zBjj3ez3Yuf5OR7ZyQ","periodo":"15/08/2023 a 14/10/2023","ano":"2023","plataforma":"Participa + Brasil","parceria":"","contribuicoes":1763,"docs":[{"cat":"Página da Consulta Pública","url":"https://www.gov.br/participamaisbrasil/regulamento-de-transferencias-internacionais-de-dados-pessoais-e-do-modelo-de-clausulas-padrao-contratuais","ref":""},{"cat":"Despacho de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzNGg-rr17KR2GN0QQ_2TgYC5gqqWBjs7gA_cYmZ2GiAnx5OzCoTyun6ECb50vga71o23tRvqAv3zPkMoRBXZ8PA","ref":""},{"cat":"Despacho de Prorrogação","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzNZtqXaAcpzNtzpDuMqtQG7XFj2CvRD7-89KAaFGAWxC_f4WGgBkg1qItC1HYUaHLs6nrQ2fj3NCNxdxVYa-299","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzOCXxugW3Mb_DqOCFVJEX6BZDE2ktil7S5QK77mpsWy-s4Csxlzb57T7KJN2y5LB6qOgOgYGy3GR0ZlSRd5PtQq","ref":""},{"cat":"Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzNWfYyExZa5V-_8-aGe5P8Cd5BBB4btca_K_6yp4HlkQIp6__8QqCeq9rSuojV5w9pM3jtx6V-Gh5z6LDGSJheM","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzOCXxugW3Mb_DqOCFVJEX6BZDE2ktil7S5QK77mpsWy-s4Csxlzb57T7KJN2y5LB6qOgOgYGy3GR0ZlSRd5PtQq","ref":""}]},{"tipo":"cp","nome":"Consulta Pública nº 03/2023","ementa":"Minuta de Resolução do Regulamento sobre a Atuação do Encarregado","sei":"00261.000226/2022-53","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4h6G3WUIoOCIR0aJTjCksb6QdMumolQNOljsbmVFOfyv","periodo":"07/11/2023 a 07/12/2023","ano":"2023","plataforma":"Participa + Brasil","parceria":"","contribuicoes":1129,"docs":[{"cat":"Página da Consulta Pública","url":"https://www.gov.br/participamaisbrasil/regulamento-encarregado","ref":""},{"cat":"Despacho de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzMn4osR8G3cBMPQydtyETYFgaVLniVVQ6IQKeQHPa-JAjqGt4X6zG3M6-HvrrlfvQ7jwhZyuyeNYFl55xdfB11M","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzNWfEkmytMvyxfsUJX3YLO4zAW29cClPHqMLw56OlQ9t-UbgFBPckQ-GchMhJcsdPohtp1weY1vsGisbxdb3i2-","ref":""},{"cat":"Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzPzYtnrKxNgrdRtsWB1f6M6N47zUuIXH14mC-L1-iQsiZq43xPqW-AGX6AcJQvFiNmE-hQq0WzA9ntf9t8prVfF","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzNShAulENr9W0xQGDA9sUoLcTYvr9cDctkkG46SEMKCQn4YGeCxlMjAL5GELo134swOV2b-z54byFO5X5M6Hwzv","ref":""}]},{"tipo":"cp","nome":"Consulta Pública nº 01/2022","ementa":"Resolução que aprova o regulamento de dosimetria e aplicação de sanções administrativas","sei":"00261.000358/2021-02","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4m5BGI0ZuB5e9QlgZW8WWzqVuFBtOBBf7GzD7ipdTq0P","periodo":"16/08/2022 a 15/09/2022","ano":"2022","plataforma":"Participa + Brasil","parceria":"","contribuicoes":2504,"docs":[{"cat":"Página da Consulta Pública","url":"https://www.gov.br/participamaisbrasil/regulamento-de-dosimetria-e-aplicacao-de-sancoes-administrativas","ref":""},{"cat":"Despacho de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzO3Y0gKFduRxK9nkqQhuBZ6ATfZ-YnYtLWlDTsZVcH_uTixmuk1tUv2aG51psbt8iVvaKgcxHmgNChLTabvjtqY","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzO4lgMoyu9VbfxYUFAHuhVhHvno_UOWOqiU4B3fEdkz1-LRXQKmAJbQkMHRErSJzTlJvLoCuFemVFy5-5xiqcNM","ref":""},{"cat":"Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzNgkQ1b4tzHCDYgc3lI_scRCol1yXYI0cof6PQzyAhiF80VD-ij2W2IKNCxHVVp1P8QBB0Ahj7ZY4of6eFualKD","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzM3oM2J1r7KAJa6i6oggVVFnjO9YwoO15K3pXrjOltBGdiHcrExGVJ90xhgOuYcng7wUjQdD5t-aetgOfxO-Gak","ref":""}]},{"tipo":"cp","nome":"Consulta Pública nº 01/2021","ementa":"Consulta pública sobre a norma de fiscalização da ANPD","sei":"00261.000089/2021-76","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4kRFzsrU_YLvKh0eMNLbFwDFsPNFxMNKCv-gMOkolCQ3","periodo":"28/05/2021 a 28/06/2021.","ano":"2021","plataforma":"Participa + Brasil","parceria":"","contribuicoes":1831,"docs":[{"cat":"Página da Consulta Pública","url":"https://www.gov.br/participamaisbrasil/norma-de-fiscalizacao-da-anpd","ref":""},{"cat":"Despacho de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzMRQImHRRWH5G2RTBcKEglkOW04y9_gEpUhYURMcBaDzdJnfJGRMekkdnpTRYQqxTI20aEgtO4w_G5f6Vtj9Etp","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzO3Y0gKFduRxK9nkqQhuBZ6ATfZ-YnYtLWlDTsZVcH_uTixmuk1tUv2aG51psbt8iVvaKgcxHmgNChLTabvjtqY","ref":""},{"cat":"Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzPlSvxEaXlwQ0xJupR5j1f_WqkYVxxRidgHzqtAoHag4nSDN740qnxK1MWLaeYl6WS8fgoVlSEtTij_hXyC1jUZ","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzMC6_AykUxNK-UAsAaWlolU4xPIPQ8gA14xUYKmRmljUsWjjgJSCDJOhPekuK36ZclRjAIXd-efFFN06NFLfTgf","ref":""}]},{"tipo":"cp","nome":"Consulta Pública nº 02/2021","ementa":"Consulta pública sobre norma de aplicação da LGPD para microempresas e empresas de pequeno porte","sei":"00261.000054/2021-37","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4s0dG1h3AkpHxR09QixsLwi2Dmxnz4zHMcLt6-wYdO_y","periodo":"30/08/2021 a 14/10/2021.","ano":"2021","plataforma":"Participa + Brasil","parceria":"","contribuicoes":1428,"docs":[{"cat":"Página da Consulta Pública","url":"https://www.gov.br/participamaisbrasil/minuta-de-resolucao-para-aplicacao-da-lgpd-para-microempresas-e-empresas-de-pequeno-porte-","ref":""},{"cat":"Despacho de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzORIypJbR8fZqDRCifD41oLccoN5VnqtWjnI5J9cscJ7Hp_AcQDB0EcA9dUPJfjFsWk-Ij2ykOYN3v-ay2vYCQI","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzOlBtxyCFyrQrfm5bstM8c9keBFDhEDYf5o6GCg9pF0ntmvBBOrrwDzv_1qXiuoolfhA0p5qIYdzUaG3P4G6Af_","ref":""},{"cat":"Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzNoaQ8t775_5SzUhmlHXZ5ZSmLEEbnux9fQRaI6yLimtfBMR8LV_PiVsXdJBIWxVEs4HxFJj99sQHRVQvWRmYYf","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzPwhFVGF6lH9fChzdM8ZdLIL3M_h2w8CYDp4SQZNWhBPAdli0wIJNbMEiEftzUUAIGYg0LnoNDAZWYkNYxDdPmn","ref":""}]},{"tipo":"ap","nome":"Audiência Pública nº 03/2026","ementa":"Minuta de Resolução que altera o Regulamento de Dosimetria e Aplicação de Sanções Administrativas","sei":"00261.005964/2026-11","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boqyqseQ-y67Jx_x_w_wTAd9FLmpWJa2nZ-app9m9HMRuE","periodo":"29/10/2026","ano":"2026","plataforma":"YouTube","parceria":"","oral":10,"espectadores":707,"docs":[{"cat":"Gravação da Audiência Pública","url":"https://www.youtube.com/watch?v=iz3eaOELkp4","ref":""}]},{"tipo":"ap","nome":"Audiência Pública nº 02/2026","ementa":"Minuta de Resolução, que dispõe sobre o Processo Regulatório no âmbito da ANPD","sei":"00261.005780/2026-51","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq2AMYUg0bL-dvNSNVf3LeoNh0VxlcBsZ39omsJcOa279","periodo":"22/10/2026","ano":"2026","plataforma":"YouTube","parceria":"","oral":7,"espectadores":984,"docs":[{"cat":"Gravação da Audiência Pública","url":"https://www.youtube.com/watch?v=gYUTDtxYAGM","ref":""}]},{"tipo":"ap","nome":"Audiência Pública nº 01/2026","ementa":"Minuta de Resolução que altera o Regulamento do Processo de Fiscalização e do Processo Administrativo Sancionador no âmbito da ANPD","sei":"00261.005349/2026-12","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq00sL5P0XmVm8-ZhOSyM70neFCcXuWvCHZ7zfyKDvW_X","periodo":"24/09/2026","ano":"2026","plataforma":"YouTube","parceria":"","oral":28,"espectadores":2965,"docs":[{"cat":"Gravação da Audiência Pública","url":"https://www.youtube.com/watch?v=hsuRrd8xH9k","ref":""}]},{"tipo":"ap","nome":"Audiência Pública nº 01/2025","ementa":"Regulamento sobre o compartilhamento de dados pessoais no setor público","sei":"00261.005367/2025-13","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boqwVOYaIRBPibhmTOdzzracUteQ43wo-uqO50SBHfgfAv","periodo":"25/11/2025","ano":"2025","plataforma":"YouTube","parceria":"","oral":7,"espectadores":1566,"docs":[{"cat":"Gravação da Audiência Pública","url":"https://www.youtube.com/watch?v=I_TLUuuMYIg","ref":""}]},{"tipo":"ap","nome":"Audiência Pública nº 01/2023","ementa":"Minuta de Resolução do Regulamento de Comunicação de Incidente de Segurança com Dados Pessoais","sei":"00261.000098/2021-67","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4gBrFZF4BsZlly0sebTh5WVZr7z9kpCIlfOsjZJj-ikH","periodo":"23/05/2023","ano":"2023","plataforma":"YouTube","parceria":"","oral":47,"espectadores":4215,"docs":[{"cat":"Gravação da Audiência Pública","url":"https://www.youtube.com/watch?v=5KCIVpnmnsA","ref":""}]},{"tipo":"ap","nome":"Audiência Pública nº 02/2023","ementa":"Minuta de Resolução do Regulamento de transferências internacionais de dados pessoais e do modelo de cláusulas-padrão contratuais","sei":"00261.000968/2021-06","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4g-dfBqz6Dd-HdYYfGNurqEiU4zBjj3ez3Yuf5OR7ZyQ","periodo":"12/09/2023","ano":"2023","plataforma":"YouTube","parceria":"","oral":27,"espectadores":3801,"docs":[{"cat":"Gravação da Audiência Pública","url":"https://www.youtube.com/watch?v=RXom_NfHg8Y","ref":""}]},{"tipo":"ap","nome":"Audiência Pública nº 03/2023","ementa":"Minuta de Resolução do Regulamento sobre a Atuação do Encarregado","sei":"00261.000226/2022-53","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4h6G3WUIoOCIR0aJTjCksb6QdMumolQNOljsbmVFOfyv","periodo":"05/12/2023","ano":"2023","plataforma":"YouTube","parceria":"","oral":51,"espectadores":4219,"docs":[{"cat":"Gravação da Audiência Pública","url":"https://www.youtube.com/watch?v=BUvhYw2YLi4","ref":""}]},{"tipo":"ap","nome":"Audiência Pública nº 01/2022","ementa":"Resolução que aprova o Regulamento de Dosimetria e Aplicação de Sanções Administrativas","sei":"00261.000358/2021-02","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4m5BGI0ZuB5e9QlgZW8WWzqVuFBtOBBf7GzD7ipdTq0P","periodo":"02/09/2022","ano":"2022","plataforma":"YouTube","parceria":"","oral":24,"espectadores":3540,"docs":[{"cat":"Gravação da Audiência Pública","url":"https://www.youtube.com/watch?v=BglK2VKAvjM","ref":""}]},{"tipo":"ap","nome":"Audiência Pública nº 01/2021","ementa":"Discussão da proposta normativa de fiscalização da ANPD","sei":"00261.000089/2021-76","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4kRFzsrU_YLvKh0eMNLbFwDFsPNFxMNKCv-gMOkolCQ3","periodo":"08/07/ e 9/07 de 2021","ano":"2021","plataforma":"YouTube","parceria":"","oral":76,"espectadores":4365,"docs":[{"cat":"Gravação da Audiência Pública","url":"https://www.youtube.com/watch?v=JKHirePseUM","ref":""},{"cat":"Categoria não informada","url":"https://www.youtube.com/watch?v=Ft8zsVIp0YI","ref":""}]},{"tipo":"ap","nome":"Audiência Pública nº 02/2021","ementa":"Norma de aplicação da LGPD para microempresas e empresas de pequeno porte","sei":"00261.000054/2021-37","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4s0dG1h3AkpHxR09QixsLwi2Dmxnz4zHMcLt6-wYdO_y","periodo":"14/09 e 15/09 de 2021","ano":"2021","plataforma":"YouTube","parceria":"","oral":94,"espectadores":5567,"docs":[{"cat":"Gravação da Audiência Pública","url":"https://www.youtube.com/watch?v=gkWYEHLaGTE","ref":""},{"cat":"Categoria não informada","url":"https://www.youtube.com/watch?v=Cq-ZoXsGyTM","ref":""}]},{"tipo":"ts","nome":"Tomada de Subsídios nº 05/2026","ementa":"Agenda de Avaliação de Resultado Regulatório referente ao quadriênio 2027/2030","sei":"00261.005238/2026-06","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq_YEBaAJYWdqATAyppSttO1wMFU4NqgtbMDZ4pq3xcKW","periodo":"01/09/2026 a 16/10/2026","ano":"2026","plataforma":"Brasil Participativo","parceria":"","docs":[{"cat":"Página da Tomada de Subsídio","url":"https://brasilparticipativo.presidencia.gov.br/processes/agenda-de-avaliacao-de-resultado-regulatorio-2027-2030","ref":""},{"cat":"Despacho de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzORIypJbR8fZqDRCifD41oLccoN5VnqtWjnI5J9cscJ7Hp_AcQDB0EcA9dUPJfjFsWk-Ij2ykOYN3v-ay2vYCQI","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzOlBtxyCFyrQrfm5bstM8c9keBFDhEDYf5o6GCg9pF0ntmvBBOrrwDzv_1qXiuoolfhA0p5qIYdzUaG3P4G6Af_","ref":""},{"cat":"Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq_YEBaAJYWdqATAyppSttO1wMFU4NqgtbMDZ4pq3xcKW","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"","ref":"Em elaboração de acordo com o § 5º do Art. 9º da Lei nº 13.848/19 e a alínea a) do inciso II do Art. 19 do Decreto nº 10.411/20"}]},{"tipo":"ts","nome":"Tomada de Subsídios nº 04/2026","ementa":"Elaboração da Agenda Regulatória da ANPD referente ao biênio 2027-2028","sei":"00261.005237/2026-53","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq2AeD7ibeqpYwPvc4d8CUkHJKHiEfm1vY2jt9NHVI_HI","periodo":"01/09/2026 a 16/10/2026.","ano":"2026","plataforma":"Brasil Participativo","parceria":"","docs":[{"cat":"Página da Tomada de Subsídio","url":"https://brasilparticipativo.presidencia.gov.br/processes/agenda-regulatoria-2027-2028","ref":""},{"cat":"Despacho de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzPDXIWHweoMFk4BCCq21Pva45VQ-Vopo_uV4_HCEv_GFAPViqaQMbkN2OBz1hNV8NdrH4mdQUeXMQHWVcz_FFZg","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzM8z4cqg5MPReVAPhlIXXRJHotrTxIjx6znF3xSgXfIb9M81b5NzFWzSEtaQqDcOW867dXjmac_h3brMSZQkhD9","ref":""},{"cat":"Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq2AeD7ibeqpYwPvc4d8CUkHJKHiEfm1vY2jt9NHVI_HI","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"","ref":"Em elaboração de acordo com o § 5º do Art. 9º da Lei nº 13.848/19 e a alínea a) do inciso II do Art. 19 do Decreto nº 10.411/20"}]},{"tipo":"ts","nome":"Tomada de Subsídios nº 03/2026","ementa":"Marco Civil da Internet","sei":"00261.003483/2026-71","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq9e111Md9HA6GvZALe0opVnDMn8Oxnr08_KG2qafEvfg","periodo":"30/06/2026 a 17/08/2026","ano":"2026","plataforma":"Brasil Participativo","parceria":"","contribuintes":66,"docs":[{"cat":"Página da Tomada de Subsídio","url":"https://brasilparticipativo.presidencia.gov.br/processes/Tomada-Subsidios-Marco-Civil-da-Internet","ref":""},{"cat":"Despacho de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzObSORcJ8k3dbv6vcv-gT3Bba_ovyFVzjzRhGR4tRU9TNZ8m7p5jI6RRZzs8AKnG_zxrOoSo9pCFk5ec1HB4or2","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzNutiOQxEhD1CVV2mQg-UXEiRnQNebP51_rKioSyeS8ulmDb_uyJCGJwLzt9UBtL-3bO-p_KOxuGPdZMVBDiboE","ref":""},{"cat":"Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq9e111Md9HA6GvZALe0opVnDMn8Oxnr08_KG2qafEvfg","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzPsnEKLhIGDQMZH0qwfsoWgUDNiDqGjqa6cftAwcfKBjJX986ENochTda7cJGadUQcRf2Sc5W3YFtPPdBFfZVus","ref":""}]},{"tipo":"ts","nome":"Tomada de Subsídios nº 02/2026","ementa":"Guia Orientativo Mecanismos de Aferição de Idade, referente ao item 15 da Agenda Regulatória 2025/2026","sei":"00261.003182/2026-47","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq3Nzm_W9bmbvTJaTl4g0bZMX4BnTlfy691fRPLuiEXuj","periodo":"22/05/2026 a 09/07/2026","ano":"2026","plataforma":"Brasil Participativo","parceria":"","contribuintes":83,"docs":[{"cat":"Página da Tomada de Subsídio","url":"https://brasilparticipativo.presidencia.gov.br/processes/Guia-orientativo-mecanismos-de-afericao-idade","ref":""},{"cat":"Despacho de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzMAlQhqipSe3r6e1ZjTNJrbCBm7pf1uSqa5KYOfAUFXGcuHqDDj4m2lH5cFBj3QKSU9LK7_SuRf0drDHjp2koV9","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzNpgUfaRiiCTlhQIds8F9lWMARy8SRbOTAw6XCM9XMjhO3eZkdc7bT7cafGX1ctdY4wGuG9ljtZRQUzzCgt5mR4","ref":""},{"cat":"Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq3Nzm_W9bmbvTJaTl4g0bZMX4BnTlfy691fRPLuiEXuj","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"","ref":"Em elaboração de acordo com o § 5º do Art. 9º da Lei nº 13.848/19 e a alínea a) do inciso II do Art. 19 do Decreto nº 10.411/20"}]},{"tipo":"ts","nome":"Tomada de Subsídios nº 01/2026","ementa":"Guia Orientativo “Fornecedores de Produtos ou Serviços de Tecnologia da Informação”, no âmbito do Estatuto Digital da Criança e do Adolescente (ECA Digital)","sei":"00261.002701/2026-50","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq8rvIRaoDWtELA-sGpnwTqJLXt5wkZ86dRyiu5AmsnoV","periodo":"30/04/2026 a 15/06/2026","ano":"2026","plataforma":"Brasil Participativo","parceria":"","contribuintes":79,"docs":[{"cat":"Página da Tomada de Subsídio","url":"https://brasilparticipativo.presidencia.gov.br/processes/Guia-orientativo-fonecedores-eca-digital","ref":""},{"cat":"Despacho de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzO0rr9Ny1BmOi-kJ1y8yNdI4XQ91SLMmqnBerFp81NrquCvpiW1tkpeKqEuUQ78QvUuo0eENpYVp4949LLylkPL","ref":""},{"cat":"Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq8rvIRaoDWtELA-sGpnwTqJLXt5wkZ86dRyiu5AmsnoV","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzNUp3I7iH8PTHPHmfirH6DTPpI6gNZeJCejdWtz_-vVB3NxS4A9TBZz-rg0jHSi0AZjffTlSq5thxXw9fWsXLGq","ref":""}]},{"tipo":"ts","nome":"Tomada de Subsídios nº 03/2025","ementa":"Tomada de Subsídios relativa aos Principais Conceitos da Lei nº 15.211, de 17 de setembro de 2025 - Estatuto Digital da Criança e do Adolescente (ECA Digital)","sei":"00261.004920/2025-92","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq7KcmJBbRByg0H3gS7y-lJJgoO_LSVVVAOmp5EKXzT3z","periodo":"28/11/2025 a 12/12/2025","ano":"2025","plataforma":"Brasil Participativo","parceria":"","contribuicoes":39,"docs":[{"cat":"Página da Tomada de Subsídio","url":"https://brasilparticipativo.presidencia.gov.br/processes/conceitosecadigital","ref":""},{"cat":"Despacho de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzPN7dXEbpOyuSiDzHffMFOFTJaPuWEvDe5ETksjx0nlAhqew3YDHeuEVA5tvPDF2bBohmB5n88xHzNqFBB3CLXe","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzPjPYDDSQ9z_etnmzUMX5JXwbhiKDbjhOpDyATr5abKZ3tHIGAuIZJM_17Zrsh_nL-DVvRrLhwIAEAAkJx6ssjm","ref":""},{"cat":"Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzP1BCEJ5LxlnFB3DZ1v2bR7IeR4TVhjd_i4J6UGf_2KWgZFFJo8cd77mdxdIHzv8es9ff9BpyvtpshG0gRTAwg7","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzMkwqdG3zSEtlBUTnaFixyqFVrV_uveaUiVJTSLJYizRRcemSPMYjEQipxsnlmlc5CGIrNpgK__byZjs_OI6Ewu","ref":""}]},{"tipo":"ts","nome":"Tomada de Subsídios nº 02/2025","ementa":"Revisão da Agenda Regulatória da ANPD para o biênio 2025/2026","sei":"00261.004321/2025-79","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boqzs1NHLIFxOhOdpHXAreYksDGpfx0dZU7doyKCxVaIhl","periodo":"17/10/2025 a 03/11/2025","ano":"2025","plataforma":"Participa + Brasil","parceria":"","contribuintes":23,"docs":[{"cat":"Página da Tomada de Subsídio","url":"https://www.gov.br/participamaisbrasil/ts-rev-ar2526","ref":""},{"cat":"Despacho de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzPr2OfpQN8tGT-UQ7uvE6t0FAIicScELUuoJdJdEQZ2ZrysLqahBQERbhbQMhAIfvPSTOvn2YvtbQGUTDASEti9","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzPKfJsAiln5xxoL4qRnohq4KkDSkSusriLEbC8OEX5UEzNzwpHH8VPFEIB9AKxmWRL5v5QTz8DnGrBxqQEpOqp-","ref":""},{"cat":"Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boqzs1NHLIFxOhOdpHXAreYksDGpfx0dZU7doyKCxVaIhl","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzNiw_ekfiaRL1Axu7rcuZGePmhUB_njA2bVfJfhQdjGkKM_eHyPwt781jKXDYNkI2SaFvb_YLMHknsMTeztMh3R","ref":""}]},{"tipo":"ts","nome":"Tomada de Subsídios nº 01/2025","ementa":"Tomada de Subsídios relativa ao Item 5 da Agenda Regulatória 2025/2026: Dados Pessoais Sensíveis - Dados Biométricos","sei":"00261.001953/2025-81","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq7IKbsI779FBd9Hil0_e-N3s6kLq97ECxPeLXAqI94KP","periodo":"02/06/2025 a 01/08/2025","ano":"2025","plataforma":"Participa + Brasil","parceria":"","contribuintes":88,"docs":[{"cat":"Página da Tomada de Subsídio","url":"https://www.gov.br/participamaisbrasil/ts-dados-biometricos","ref":""},{"cat":"Despacho de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzPsRY3quX13iqNTB4HC5-Z7klK_xntPskBxlx00ZTovipUiwYVrgQj8f1gL7DpcjQXB62e73Pv-esfHUeTWvz--","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzPlVd5v_pupOZuTPpvj8uFdcpw0nCdom5Ma03lX14kH9PWslpONTZFExjTdikMm9KaRhsmvhdV0UC4yU1Jc7E8V","ref":""},{"cat":"Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzOr7gkEkxE-qrvIu2_dvfHuNiRVR37ysO7AyN7KW6vhY2Qhr2savyijEwJ30sVM7s1W0CEhedFgRR5Lq_LuDybu","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzPP2rva7V79Fz0oZL_7tSXgNojZUb4lc2Vy89dajK6JQ_X5bZxRht14HAFFhKlrqTBfYfTlA1MSHEv2ghGZPze1","ref":""}]},{"tipo":"ts","nome":"Tomada de Subsídios nº 06/2024","ementa":"Consulta à sociedade relativa ao Item 17 da Agenda Regulatória 2023/2024: Inteligência Artificial","sei":"00261.006920/2024-46","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq08Kw4rBDdd9oKoDFuUE8EN2RmUR-Gdp9eWFKXLuPQ52","periodo":"06/11/2024 a 24/01/2025","ano":"2024","plataforma":"Participa + Brasil","parceria":"","contribuintes":124,"docs":[{"cat":"Página da Tomada de Subsídio","url":"https://www.gov.br/participamaisbrasil/tomada-de-subsidios-inteligencia-artificial-e-revisao-de-decisoes-automatizadas","ref":""},{"cat":"Despacho de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzNrhiP57xE4qrpSWFFsf_5bS26C-WKLOOj1i2NgDGeKlgiH114gYPPiYfMIXt6blChwvEhszYTnzVKKaQPJFsKh","ref":""},{"cat":"Despacho de Prorrogação","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzM13GQiCfOBSgnYZiRI49KLAWQPZbmS7MnRl22W9kKLKn0Hsi4SRrude_wO0pL1UrG50tFRWdtotMMIxjabnZoe","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzPwE94MebdZIZbzw3JvfUg9iq6yGryqJpbijmIgL4qM0ukLmEIAFiBiQJBB4Tif9XtOZFWYct32EVBhOrmOwE7x","ref":""},{"cat":"Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq08Kw4rBDdd9oKoDFuUE8EN2RmUR-Gdp9eWFKXLuPQ52","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzPKVP6OBroSPq2BxbWqAIUDy-1j2R0BPHuq55iA5_05e1sK6Hp6_mMEAS3B4OdsQPsgGdDjYiXAGnRs-qUy8wrl","ref":""}]},{"tipo":"ts","nome":"Tomada de Subsídios nº 05/2024","ementa":"Consulta à sociedade para elaboração da Agenda Regulatória da ANPD para o biênio 2025/2026","sei":"00261.004321/2025-79","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boqzs1NHLIFxOhOdpHXAreYksDGpfx0dZU7doyKCxVaIhl","periodo":"16/10/2024 a 31/10/2024","ano":"2024","plataforma":"Participa + Brasil","parceria":"","contribuintes":37,"docs":[{"cat":"Página da Tomada de Subsídio","url":"https://www.gov.br/participamaisbrasil/tomada-de-subsidios-agenda-regulatoria25-26","ref":""},{"cat":"Despacho de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzPr2OfpQN8tGT-UQ7uvE6t0FAIicScELUuoJdJdEQZ2ZrysLqahBQERbhbQMhAIfvPSTOvn2YvtbQGUTDASEti9","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzPKfJsAiln5xxoL4qRnohq4KkDSkSusriLEbC8OEX5UEzNzwpHH8VPFEIB9AKxmWRL5v5QTz8DnGrBxqQEpOqp-","ref":""},{"cat":"Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boqzs1NHLIFxOhOdpHXAreYksDGpfx0dZU7doyKCxVaIhl","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzNiw_ekfiaRL1Axu7rcuZGePmhUB_njA2bVfJfhQdjGkKM_eHyPwt781jKXDYNkI2SaFvb_YLMHknsMTeztMh3R","ref":""}]},{"tipo":"ts","nome":"Tomada de Subsídios nº 04/2024","ementa":"Consulta à sociedade sobre questões relativas ao Item 14 da Agenda Regulatória 2023/2024: Tratamento de Dados Pessoais de Crianças e Adolescentes","sei":"00261.004146/2024-39","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq2AZdApOKMuIYYxOIz_-qa5oBZ4limNlXwUe0BcehA-s","periodo":"18/06/2024 a 16/08/2024","ano":"2024","plataforma":"Participa + Brasil","parceria":"","contribuintes":79,"docs":[{"cat":"Página da Tomada de Subsídio","url":"https://www.gov.br/participamaisbrasil/tscriancaeadolescente","ref":""},{"cat":"Despacho de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzMCpj7Kf4kjJHKboEBLdZT2csUz5EOmActkIk8HuKawYNCOKpvwclndgGdlzbYUP4m3aVX9AuZ3dwJu5tRehZmV","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzP2T6K4P38PdseMoU-zS3XWQWnc1mWY4P9gz1ykEHX2hZal6FrJiDv5BnMdx3IkdeN9wrhQWTYYFa61Obuc9As1","ref":""},{"cat":"Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq2AZdApOKMuIYYxOIz_-qa5oBZ4limNlXwUe0BcehA-s","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzOnEGtNFV-CNAVKoNZFWrEZtYZqxBKFGXYIWhEWyVPxAomVsjshMh5IfeOS59uEJLE3XAZjpvjTLgsZ21oA3F2U","ref":""}]},{"tipo":"ts","nome":"Tomada de Subsídios nº 02/2024","ementa":"Consulta à sociedade a respeito dos direitos dos titulares de dados pessoais","sei":"00261.000843/2024-11","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4l7OJT9LSIMBy-vronFzlezvvCk1FLftuJesnDbmR0MA","periodo":"02/02/2024 a 03/04/2024","ano":"2024","plataforma":"Participa + Brasil","parceria":"","contribuintes":49,"docs":[{"cat":"Página da Tomada de Subsídio","url":"https://www.gov.br/participamaisbrasil/consulta-a-sociedade-sobre-os-direitos-dos-titulares","ref":""},{"cat":"Despacho de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzPpmtvGcUdv_KFTjuW24BhKudG4GQmp_gb4cuhPInByUBhU67J-1VmMvGvfbxsQSr6VlUDSHdayl9LsaZoePulZ","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzMTy6c-t1ajttvDhRt-uIppNPc9GHtsbJPigLwLTBzq60ksNDM4jTIG9M552u0TfLPYXaslVb-UsPNU404QXL-r","ref":""},{"cat":"Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzOrwdIxu38oKk1tYT7xhAlMXwisVWA1wyW0Qu7rBQ5zBpXG5c6-xW8l7ElDc11ziI_tHdSktaN8WaO3ZrXavb1U","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"","ref":"Em elaboração de acordo com o § 5º do Art. 9º da Lei nº 13.848/19 e a alínea a) do inciso II do Art. 19 do Decreto nº 10.411/20"}]},{"tipo":"ts","nome":"Tomada de Subsídios nº 01/2024","ementa":"Consulta à sociedade sobre o Estudo Preliminar de Anonimização e Pseudonimização para a Proteção de Dados Pessoais","sei":"00261.006532/2026-27","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq6qDrQxKqd2GHdLMvBb9o5LbdWi1mIdMO0pIsLgqUAGR","periodo":"30/01/2024 a 14/03/2024","ano":"2024","plataforma":"Participa + Brasil","parceria":"","contribuintes":49,"docs":[{"cat":"Página da Tomada de Subsídio","url":"https://www.gov.br/participamaisbrasil/consulta-a-sociedade-estudo-preliminar-anonimizacao-e-pseudonimizacao-para-protecao-de-dados","ref":""},{"cat":"Despacho de Abertura","url":"https://www.gov.br/anpd/pt-br/acesso-a-informacao/participacao-social/outras-acoes/ts-01-2024-despacho-de-abertura.pdf/@@display-file/file","ref":""},{"cat":"Despacho de Prorrogação","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzMmEsXD1zJPxlpxEizzh9yt07a7v4IURbieB4lYk6n3-0IALyAYfvn7e_ibg7lfiE5d0J2zV2BWnYouPtusEiFS","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzME4IDI2kPoZ7dJlv1elcbWdTMcDwAE62y8TkclpV9nTD0RWKqURM-X942Uq2JK5CdOb_XdwUTQ0E_LNO4H0xzO","ref":""},{"cat":"Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzME4IDI2kPoZ7dJlv1elcbWdTMcDwAE62y8TkclpV9nTD0RWKqURM-X942Uq2JK5CdOb_XdwUTQ0E_LNO4H0xzO","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzMb75Qfcy6m20-LAKDkG0TFGJLN11xWSFE-CS1fdpB2Zj7A9eiWQojmiotpiDBHkZxM_TYn0tATsb3n0V7WHQ87","ref":""}]},{"tipo":"ts","nome":"Tomada de Subsídios nº 01/2023","ementa":"Hipóteses Legais de Tratamento de Dados Pessoais - Legítimo Interesse","sei":"00261.001289/2022-27","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4gF-yXdOi0yVo1huKuLE9cfONr5104WwRQPPtWH8pPug","periodo":"16/08/2023 a 30/09/2023.","ano":"2023","plataforma":"Participa + Brasil","parceria":"","contribuintes":61,"docs":[{"cat":"Página da Tomada de Subsídio","url":"https://www.gov.br/participamaisbrasil/consulta-a-sociedade-de-estudo-preliminar-sobre-legitimo-interesse-1","ref":""},{"cat":"Despacho de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzOu-GHBE69v4jovYvmNAOWWSaKSsylcItjB3Uywa1faw4prsqua414QNM2NNM5C8fJZmq9GJRq4c2EVmw7zN92E","ref":""},{"cat":"Despacho de Prorrogação","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzPP4HAvpDzGCRWQ3VY3bMdId2hxUl-FH-xmFq-2rKC4CFpq1huxOfLNGvtrcRl6zghzjaiNN3qBpIW7OkYR02ib","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzP-qkmg3zWMeyv9DXgP4EIL3T2Bw45dvZJaWHej0NmjwdHxsatlKiuqy5m3U6vDdkZ726PRTURKRWwY-xqA7m4F","ref":""},{"cat":"Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzNGV4yzi-iNoNg6sCiNBnJtOw2ozm6b5UslbC4RbqenLODdLT3DyT0s1q63-kgHk0gxV3rV3uqr-7Nt3YnDzCc8","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzP3hU2QKE4qvETUfPX_B3tfpCixs5HOlnExRp8wRNjK73SZ5aT2k_TDhKpnotKw82g7mrfVzMn25j7qXUUSz6BW","ref":""}]},{"tipo":"ts","nome":"Tomada de Subsídios nº 06/2022","ementa":"Modelo de registro simplificado das operações de tratamento de dados pessoai","sei":"00261.000397/2022-82","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4t2OhDiwZ3ejWXLVQoVVVYxt-r-MRUiETlxZ_o_YJteZ","periodo":"04/11/2022 a 03/01/2023","ano":"2022","plataforma":"Participa + Brasil","parceria":"","contribuintes":40,"docs":[{"cat":"Página da Tomada de Subsídio","url":"https://www.gov.br/participamaisbrasil/tomada-de-subsidios-sobre-modelo-de-registro-de-atividades-de-tratamento-de-dados-pessoais-","ref":""},{"cat":"Despacho de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzMLVwlRetYY_DTx05nZJd5pyJH4OUcpzcpg2HhimD6J9fT3IhCGHF3-SDugfgjI_WF3YecA6lha-IngrZhaTb_k","ref":""},{"cat":"Despacho de Prorrogação","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzN_s1i9zi_hqayYNiuocwdlDBJki2DIGvBbg0cb0zfevzqU6vCGianEush0QLkobOu8GsPP_sJDmv9LM4yClrXW","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzMwPG50MToRV5f4ZNcLCIYnTbmmz20qv7xzOF0zMzX1Hpuw0G_f0CtpbHPjPGyA8VG_X6JMv1RWfemvPcX-Schu","ref":""},{"cat":"Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzMwg5Vt-MFrw4OuS_YgfYBKhMCJawnZXwUlxzBCVQUpm4vLmIRWKrkODA8_v90a3Q6RzKw1SRFxrnbHBUqBzSng","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzOzZK-HJra-RNn_16US2gPrB2JeyIAJ-YLtsKLz0-cIPVAJ42jeLaFZVu7ZljdWJc_CSEThq409scnRZTsmFcJs","ref":""}]},{"tipo":"ts","nome":"Tomada de Subsídios nº 05/2022","ementa":"Hipóteses de tratamento de dados pessoais de crianças e adolescentes","sei":"00261.001880/2022-84","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4pV4COZdlPZJ7T1wcsLzusAyzNZ732KPCv5SwU5hah-h","periodo":"08/09/2022 a 07/11/2022","ano":"2022","plataforma":"Participa + Brasil","parceria":"","contribuintes":63,"docs":[{"cat":"Página da Tomada de Subsídio","url":"https://www.gov.br/participamaisbrasil/enunciado-criancas-e-adolescentes","ref":""},{"cat":"Despacho de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzPc1aHtrsgjvYWFa53g3_mQQrF_amK-pXxTCQC1m8PkIoubuhcePWxBg22Gt1ruLxko4GY9ycxAXg8f_6HFt9t0","ref":""},{"cat":"Despacho de Prorrogação","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzMMbDJnr15PjycWqZCLNt_NpjlVBmQsE_4gcQJCws88sbTeKJK1HtqXyHvCiR_B_tnqvrYPlqouroIiDIgkHkyg","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzM2ccMyL8lYiWNwaJX78lSJYHMRQcMxwc4zi8QwibzqD_sn0_XFRnDUULzHGfDR580RS3c7kxvw11yAK0uDR0o6","ref":""},{"cat":"Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzOa7sEzOoO3_bhO0YLmS3va3tIDJ0mG8p9hHstmzjvAc9pl2PGebfApTGRaEq1G7ofZz3y-C5CFDPON5de81bqg","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzNlG8cb7sdSeBAevqd8x5RnVY3aM-ulZ_r0ABkRUqInqUXrDCK5D-7RLccYZJD_TtR2dHv-Jfo9j3-XH-M1O601","ref":""}]},{"tipo":"ts","nome":"Tomada de Subsídios nº 04/2022","ementa":"Pesquisa sobre larga escala e tratamento de alto risco ao titular de dados pessoais","sei":"00261.005677/2026-19","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq60XAzzTiHX7Pgjqjx2K-hhkJ9cOyLKAykRBG6W4zicd","periodo":"28/09/2022 a 28/10/2022","ano":"2022","plataforma":"Participa + Brasil","parceria":"","contribuintes":36,"docs":[{"cat":"Página da Tomada de Subsídio","url":"https://www.gov.br/participamaisbrasil/-pesquisa-sobre-larga-escala-e-tratamento-de-alto-risco-ao-titular-de-dados-pessoais-","ref":""},{"cat":"Despacho de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzNvpwOGlYlNF22teAVUXCfMmhBY2-KwamPSIG8KEcLMHy8Zy7q9bzqMvbLX6XXEm2aOi0FY8iYH66lvRojjHLZw","ref":""},{"cat":"Despacho de Prorrogação","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzMPYfsHKrJpBMNoJPjllQlhqP-ImetRTwd0nMZfe-5lbc1o9AcoTDO5sPWOEd1YQhFVxePJjtef9SkTEFvihu8k","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzONlbjGEVrO_R1x7Q32notfMS-jB_1mHUoPvzLT3wbUUF4MLw_7o1qgrCcALIwXK3LgfYSallS9YEoaxxcscBbE","ref":""},{"cat":"Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzONlbjGEVrO_R1x7Q32notfMS-jB_1mHUoPvzLT3wbUUF4MLw_7o1qgrCcALIwXK3LgfYSallS9YEoaxxcscBbE","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"","ref":"Em elaboração de acordo com o § 5º do Art. 9º da Lei nº 13.848/19 e a alínea a) do inciso II do Art. 19 do Decreto nº 10.411/20"}]},{"tipo":"ts","nome":"Tomada de Subsídios nº 03/2022","ementa":"Agenda regulatória para o biênio 2023-2024","sei":"00261.001286/2022-93","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4nGuZhbxpRrqIog5YwQ8S_a8Xk2ABpqHPkQ2HQv9MsOJ","periodo":"03/08/2022 a 31/08/2022","ano":"2022","plataforma":"Participa + Brasil","parceria":"","contribuintes":127,"docs":[{"cat":"Página da Tomada de Subsídio","url":"https://www.gov.br/participamaisbrasil/tomada-de-subsidios-agenda-regulatoria","ref":""},{"cat":"Despacho de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzPwtGaWtJCC1ZpevRSZ9uyIYQEKFdD704cXm0i6qSrPlkPGPZBXAFaMFEL4CkAiKFuYMwMKhvn0zNJ6pwHLhWaX","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzPPYraDIs8arSmsDJu-NQQZFzgenOHlUIfkHIiKYETqmG7rdT3s8b7gfhpqwQMQH-1Ha0qrNHYwftff-epNe3fs","ref":""},{"cat":"Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzOMWtU6YiCTzFrZwN0uBddMh0Ehcrja4nWUtDZfLAqNdLGf8hfZpUnek-A3fL_bhpOYKYq1dgxQdJ_9U97ToMDU","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzPAD0h_l5wFnJVQEOMSGWcWbNBRsdoH4MRD0MzYCFrlOaxbC9KngtgFIfRNjDp2ibdBL1l25enHIKA4YiVJN9sG","ref":""}]},{"tipo":"ts","nome":"Tomada de Subsídios nº 02/2022","ementa":"Regulamentação de Transferência Internacional de Dados Pessoais","sei":"00261.000968/2021-06","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4g-dfBqz6Dd-HdYYfGNurqEiU4zBjj3ez3Yuf5OR7ZyQ","periodo":"18/05/2022 a 30/06/2022","ano":"2022","plataforma":"Participa + Brasil","parceria":"","contribuintes":75,"docs":[{"cat":"Página da Tomada de Subsídio","url":"https://www.gov.br/participamaisbrasil/tomada-de-subsidios-transferencia-internacional","ref":""},{"cat":"Despacho de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzO9INyfGnsxvwK1MM6NP0pnFRx9ZGiJw25B4-5KU9eUK1BpkK21vYJMHIzEh4dpw7EcbOondqr-3mB1PJmAnlxH","ref":""},{"cat":"Despacho de Prorrogação","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzMtf-3C1Z12d1vmJTLtbXv0W4kH3kZHMyuuFZ5MN0FTIQiEm4RJKXTj1ozJjd-uA9102M2MeLgGvhx2iZheT9TG","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzNqi5JVDdDkQfUqe2PEY-5M7FjasIuaKK8iSKWRjd-wQ5lDwwN7BtH1nHGdMncJgnBZIB602ZaGfhHEy8bGNypm","ref":""},{"cat":"Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzPbbYGZTwaeo6mcwWqzN1h4ElD_zXvzjseRy3av2Wutwj9LOtXDAplOqjn6WbgNcu1H9LJ1MNkwCvcSMN7lGFVc","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzN5cRgasfOixc6U7iHjXGJrtSxNnsu4v8X1v-i9ZgisNNJvYZ4rU0dAToxpsNJK2xVv2D96xN8wRiajrFPujxcY","ref":""}]},{"tipo":"ts","nome":"Tomada de Subsídios nº 01/2022","ementa":"Regulamentação da Norma sobre o Encarregado pelo Tratamento de Dados Pessoais","sei":"00261.000226/2022-53","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4h6G3WUIoOCIR0aJTjCksb6QdMumolQNOljsbmVFOfyv","periodo":"18/03/2022 a 28/03/2022","ano":"2022","plataforma":"Microsoft Forms","parceria":"","contribuintes":20,"docs":[{"cat":"Despacho de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzMtwnqvwFham0U9AbaD1babAnReDwU0_x0b_wErMPVnrSyjfuclSCHKq01K4aQnFQD-Ni_jb6VmY7q-cOl_f_PU","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzM39s2iKA_hn3sYUH6MttDAB-L13VgOydz8UMO6UOCZay_sZmW24OCz0_fN8LF_o3Y6Bv1oWq6BKoCjkEUcZDLX","ref":""},{"cat":"Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzOIb3h-_DHU7I3x63fkxdvNpbchoB69LbOI2_p86YDWZ7u-0rAcM0xpkEhc-YZmbyzo0CBmckV6gOAWGoMEurfz","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzMlJku_81EzoB5-DtnIhE8Sw2F4nHau6H6EQwm27PBpB2YWKi2BPCKGdAEs0jjh3ppJEbYCFKQplQHOX5-Tr9xG","ref":""}]},{"tipo":"ts","nome":"Tomada de Subsídios nº 02/2021","ementa":"Regulamentação de Notificação de Incidentes de Segurança","sei":"00261.000098/2021-67","seiUrl":"","periodo":"22/02/2021 a 24/03/2021","ano":"2021","plataforma":"Microsoft Forms","parceria":"","contribuintes":98,"docs":[{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzPWoepuRuQs2A-mMZlmGsUT5pWqul0jWQpXjge61J9DfTlcJi6JDsTweHUbmNlpeULYiqlT8fbZA2RUKyo_Gf3l","ref":""},{"cat":"Contribuições Parte 1","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzNYdgu0-cK_Zu7bgENuikmX559p_BiRajtBjMoozA9CoEt38DCnS0GQ7bJEh1t8tktTTrL084AICIxNXfZfCpLw","ref":""},{"cat":"Contribuições Parte 2","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzMMBtvd-mGFPMOCqx8q0_PN39Xc6ii0dYOrm0IafMlmUcYkTl3bIvSFZTHzuySO92Zbxa4Mmi00UHbQOiA890Ul","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzO0MBA7fx4A10xC1DuimfAvL1xoTn5vn9ljHuVx1IuCP8szrqUHT8KHasXkqUfZK8j2Ib9qmNa9D_Ht2GH3vQcD","ref":""}]},{"tipo":"ts","nome":"Tomada de Subsídios nº 01/2021","ementa":"Regulamentação da aplicação da Lei Geral de Proteção de Dados Pessoais (LGPD) para microempresas e empresas de pequeno porte, iniciativas empresariais de caráter incremental ou disruptivo que se autodeclarem startups ou empresas de inovação e pessoas físicas que tratam dados pessoais com fins econômicos","sei":"00261.000054/2021-37","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4s0dG1h3AkpHxR09QixsLwi2Dmxnz4zHMcLt6-wYdO_y","periodo":"29/01/2021 a 02/02/2021","ano":"2021","plataforma":"E-mail","parceria":"","contribuintes":65,"docs":[{"cat":"Página da Tomada de Subsídio","url":"https://www.gov.br/anpd/anpd/pt-br/assuntos/noticias/ainda-na-semana-internacional-da-protecao-de-dados-anpd-inicia-tomada-de-subsidios-sobre-microempresa","ref":""},{"cat":"Nota Técnica de Abertura","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzOzGV_fQom83PSipWl4kE79aac5OHWgX01kye6rhELzSPvSY5iTffgXuHXkuEIxLEu1af0HvQFIY5EvXEfyWnnb","ref":""},{"cat":"Contribuições Parte 1","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzNoPpsJ1gjD_z2YFeztlWKk6dfzNK591eRW1jN1jA9EuUacQByTiCO7Q-JD7Yt8SkRnR-QCaRvEwRYbV-1Gv94B","ref":""},{"cat":"Contribuições Parte 2","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzMiT8066mVkm-hsIW3nUl99O4JZsJJyiAOszxv4AcAnvDHct88UCD1jZhugNnRqOvTKkO72C0-C8AiT-ueTE94y","ref":""},{"cat":"Nota Técnica de Análise de Contribuições","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzMaTIM58kSgjpfIGar2VgJEpApV0aFccfEX3eoUlW4b6C-ocOGOEix6uMwUsJy0_dvCS7sHKc2_vSYTNr7RqT2-","ref":""}]}],"publicacoes":[{"secao":"reg","secaoNome":"Regulamentos","titulo":"Resolução CD/ANPD nº 19, de 23 de agosto de 2024","categoria":"Normatização","sei":"00261.000968/2021-06","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4g-dfBqz6Dd-HdYYfGNurqEiU4zBjj3ez3Yuf5OR7ZyQ","ano":"2024","anoNum":"2024","vigencia":"Vigente com as alterações da RETIFICAÇÃO DE 18/08/2025","ementa":"Aprova o Regulamento de Transferência Internacional de Dados e o conteúdo das cláusulas-padrão contratuais","parceria":"","docs":[{"cat":"Resolução","url":"https://www.in.gov.br/en/web/dou/-/resolucao-cd/anpd-n-19-de-23-de-agosto-de-2024-580095396","ref":""}]},{"secao":"reg","secaoNome":"Regulamentos","titulo":"Resolução CD/ANPD nº 18, de 16 de julho de 2024","categoria":"Normatização","sei":"00261.000226/2022-53","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4h6G3WUIoOCIR0aJTjCksb6QdMumolQNOljsbmVFOfyv","ano":"2024","anoNum":"2024","vigencia":"Vigente","ementa":"Aprova o Regulamento sobre a atuação do encarregado pelo tratamento de dados pessoais","parceria":"","docs":[{"cat":"Resolução","url":"https://www.in.gov.br/en/web/dou/-/resolucao-cd/anpd-n-18-de-16-de-julho-de-2024-572632074","ref":""}]},{"secao":"reg","secaoNome":"Regulamentos","titulo":"Resolução CD/ANPD nº 15, de 24 de abril de 2024","categoria":"Normatização","sei":"00261.000098/2021-67","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4gBrFZF4BsZlly0sebTh5WVZr7z9kpCIlfOsjZJj-ikH","ano":"2024","anoNum":"2024","vigencia":"Vigente","ementa":"Aprova o Regulamento de Comunicação de Incidente de Segurança","parceria":"","docs":[{"cat":"Resolução","url":"https://www.in.gov.br/en/web/dou/-/resolucao-cd/anpd-n-15-de-24-de-abril-de-2024-556243024","ref":""}]},{"secao":"reg","secaoNome":"Regulamentos","titulo":"Resolução CD/ANPD nº 4, de 24 de fevereiro de 2023","categoria":"Normatização","sei":"00261.000358/2021-02","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4m5BGI0ZuB5e9QlgZW8WWzqVuFBtOBBf7GzD7ipdTq0P","ano":"2023","anoNum":"2023","vigencia":"Vigente","ementa":"Aprova o Regulamento de Dosimetria e Aplicação de Sanções Administrativas","parceria":"","docs":[{"cat":"Resolução","url":"https://www.in.gov.br/en/web/dou/-/resolucao-cd/anpd-n-4-de-24-de-fevereiro-de-2023-466146077","ref":""}]},{"secao":"reg","secaoNome":"Regulamentos","titulo":"Resolução CD/ANPD nº 2, de 27 de janeiro de 2022","categoria":"Normatização","sei":"00261.000054/2021-37","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4s0dG1h3AkpHxR09QixsLwi2Dmxnz4zHMcLt6-wYdO_y","ano":"2022","anoNum":"2022","vigencia":"Vigente com alterações pela Resolução CD/ANPD nº 15, de 24 de abril de 2024","ementa":"Aprova o Regulamento de aplicação da Lei nº 13.709, de 14 de agosto de 2018, Lei Geral de Proteção de Dados Pessoais (LGPD), para agentes de tratamento de pequeno porte","parceria":"","docs":[{"cat":"Resolução","url":"https://www.gov.br/anpd/pt-br/acesso-a-informacao/institucional/atos-normativos/regulamentacoes_anpd/resolucao-cd-anpd-no-2-de-27-de-janeiro-de-2022","ref":""}]},{"secao":"reg","secaoNome":"Regulamentos","titulo":"Resolução CD/ANPD nº 1, de 28 de outubro de 2021","categoria":"Normatização","sei":"00261.000089/2021-76","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4kRFzsrU_YLvKh0eMNLbFwDFsPNFxMNKCv-gMOkolCQ3","ano":"2021","anoNum":"2021","vigencia":"Vigente com retificações pela Resolução CD/ANPD nº 4, de 24 de fevereiro de 2023","ementa":"Aprova o Regulamento do Processo de Fiscalização e do Processo Administrativo Sancionador no âmbito da Autoridade Nacional de Proteção de Dados","parceria":"","docs":[{"cat":"Resolução","url":"https://www.gov.br/anpd/pt-br/acesso-a-informacao/institucional/atos-normativos/regulamentacoes_anpd/resolucao-cd-anpd-no1-2021","ref":""}]},{"secao":"gui","secaoNome":"Guias Orientativos","titulo":"Fornecedores de produtos ou serviços de tecnologia da informação: escopo e obrigações gerais do ECA Digital","categoria":"Direito Digital","sei":"00261.004723/2025-73","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boqw0Tw915CL7ydl2Z8OBiKMiV8XjraMlTmsoDLMj2o1oo","ano":"2026","anoNum":"2026","vigencia":"Vigente","ementa":"Orientações e fixar interpretações sobre os principais conceitos relacionados ao escopo de aplicação do Estatuto Digital da Criança e do Adolescente (ECA Digital)","parceria":"","docs":[{"cat":"Guia Orientativo","url":"https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia-fornecedores-de-produtos-ou-servicos-de-tecnologia-da-informacao.pdf/@@display-file/file","ref":""}]},{"secao":"gui","secaoNome":"Guias Orientativos","titulo":"Atuação do encarregado pelo tratamento de dados pessoais","categoria":"Direito Digital e Proteção de Dados Pessoais","sei":"00261.000226/2022-53","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4h6G3WUIoOCIR0aJTjCksb6QdMumolQNOljsbmVFOfyv","ano":"2024","anoNum":"2024","vigencia":"Vigente","ementa":"Orientações sobre a atuação, atribuições e responsabilidades do encarregado pelo tratamento de dados pessoais","parceria":"","docs":[{"cat":"Guia Orientativo","url":"https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia_da_atuacao_do_encarregado_anpd.pdf/@@display-file/file","ref":""}]},{"secao":"gui","secaoNome":"Guias Orientativos","titulo":"Hipóteses legais de tratamento de dados pessoais legítimo interesse","categoria":"Regulação da Proteção de Dados e Direito Digital","sei":"00261.001289/2022-27","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4gF-yXdOi0yVo1huKuLE9cfONr5104WwRQPPtWH8pPug","ano":"2024","anoNum":"2024","vigencia":"Vigente","ementa":"Orientações para aplicação da hipótese legal do legítimo interesse no tratamento de dados pessoais","parceria":"","docs":[{"cat":"Guia Orientativo","url":"https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/copy_of_guia_legitimo_interesse.pdf/@@display-file/file","ref":""}]},{"secao":"gui","secaoNome":"Guias Orientativos","titulo":"Tratamento de dados pessoais para fins acadêmicos e para a realização de estudos e pesquisas","categoria":"Direito Digital e Proteção de Dados","sei":"00261.000810/2022-17","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4vgEWE6hcB7OleBCaNs5cbvPdlRkufEzm-awZrnssRzw","ano":"2023","anoNum":"2023","vigencia":"Vigente","ementa":"Orientações sobre o tratamento de dados pessoais para fins acadêmicos, estudos e pesquisas, abordando as hipóteses legais, compartilhamento de dados, medidas de segurança e padrões éticos aplicáveis","parceria":"","docs":[{"cat":"Guia Orientativo","url":"https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/web-guia-anpd-tratamento-de-dados-para-fins-academicos.pdf/@@display-file/file","ref":""}]},{"secao":"gui","secaoNome":"Guias Orientativos","titulo":"Tratamento de dados pessoais pelo Poder Público","categoria":"Compartilhamento de Dados e Interoperabilidade Governamental","sei":"00261.001448/2021-11","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4mGgHrcXfBm9k8EHSSHa5Iv6KKWalKFxpXB3Xr-j1Ce0","ano":"2023","anoNum":"2023","vigencia":"Vigente","ementa":"Orientações sobre o tratamento de dados pessoais pelo Poder Público, com foco nas bases legais, responsabilidades dos agentes de tratamento e compartilhamento de dados","parceria":"","docs":[{"cat":"Guia Orientativo","url":"https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia-poder-publico-anpd-versao-final.pdf/@@display-file/file","ref":""}]},{"secao":"gui","secaoNome":"Guias Orientativos","titulo":"Cookies e proteção de dados pessoais","categoria":"Direito Digital e Segurança da informação","sei":"00261.000313/2022-19","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4sCTYSMKLxZ7JMl4bUlVqkkLXVUnYBo8A0hPor6LAJ3Z","ano":"2022","anoNum":"2022","vigencia":"Vigente","ementa":"Orientações sobre o uso de cookies e o tratamento de dados pessoais por meio dessas tecnologias, abordando transparência, consentimento, direitos dos titulares e boas práticas de proteção de dados","parceria":"","docs":[{"cat":"Guia Orientativo","url":"https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia-orientativo-cookies-e-protecao-de-dados-pessoais.pdf/@@display-file/file","ref":""}]},{"secao":"gui","secaoNome":"Guias Orientativos","titulo":"Definições dos Agentes de Tratamento de Dados Pessoais e do Encarregado","categoria":"Direito Digital","sei":"00261.000468/2021-66","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4n88yBTD-tmDlKCVbCtEginBN3RNzvpthFBfhq8k_y-U","ano":"Versão 1.0: 2021 · Versão 2.0: 2022","anoNum":"2022","vigencia":"Vigente","ementa":"Orientações para identificação e definição dos agentes de tratamento de dados pessoais e do encarregado, abordando os conceitos, responsabilidades e atribuições de controladores, operadores, suboperadores e encarregados","parceria":"","docs":[{"cat":"Guia Orientativo","url":"https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia-agentes-de-tratamento-e-encarregado-versao-1-0-defeso-eleitoral.pdf/@@display-file/file","ref":""},{"cat":"Documento","url":"https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia_agentes_de_tratamento_e_encarregado___defeso_eleitoral.pdf/@@display-file/file","ref":""}]},{"secao":"gui","secaoNome":"Guias Orientativos","titulo":"Aplicação da Lei Geral de Proteção de Dados Pessoais (LGPD) por agentes de tratamento no contexto eleitoral","categoria":"Direito Digital e Proteção de Dados Pessoais","sei":"00261.001132/2021-11","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4jQGu10ZuLLRZRROcB538_5xhreui1c34hPtqk-41Gdu","ano":"2021","anoNum":"2021","vigencia":"Vigente","ementa":"Apresentação dos principais conceitos, princípios, direitos e obrigações previstos na Lei Geral de Proteção de Dados Pessoais (LGPD), com orientações gerais para sua compreensão e aplicação","parceria":"Tribunal Superior Eleitoral - TSE","docs":[{"cat":"Guia Orientativo","url":"https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia_lgpd_final.pdf/@@display-file/file","ref":""}]},{"secao":"gui","secaoNome":"Guias Orientativos","titulo":"Segurança da Informação para Agentes de Tratamento de Pequeno Porte","categoria":"Segurança da Informação e Proteção de Dados Pessoais","sei":"00261.000821/2021-16","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4l_molSVuCuy1sN_hQIohH8kjL4Zed2jWpXw2XhJsz24","ano":"2021","anoNum":"2021","vigencia":"Vigente","ementa":"Orientações sobre medidas administrativas e técnicas de segurança da informação para agentes de tratamento de pequeno porte","parceria":"","docs":[{"cat":"Guia Orientativo","url":"https://www.gov.br/anpd/pt-br/centrais-de-conteudo/materiais-educativos-e-publicacoes/guia_seguranca_da_informacao_para_atpps___defeso_eleitoral.pdf/@@display-file/file","ref":""}]},{"secao":"age","secaoNome":"Agenda Regulatória","titulo":"Resolução CD/ANPD nº 31, de 22 de dezembro de 2025","categoria":"Normatização","sei":"00261.005081/2024-49","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq0ROn-25XPc2RviCrclW7me3uEmiJ3FDawx41u4jd6qg","ano":"2025","anoNum":"2025","vigencia":"Vigente","ementa":"Altera a Agenda Regulatória para o biênio 2025-2026","parceria":"","docs":[{"cat":"Resolução","url":"https://www.in.gov.br/en/web/dou/-/resolucao-cd/anpd-n-31-de-22-de-dezembro-de-2025-677950080","ref":""}]},{"secao":"age","secaoNome":"Agenda Regulatória","titulo":"Resolução nº 23, de 9 de dezembro de 2024","categoria":"Normatização","sei":"00261.005081/2024-49","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq0ROn-25XPc2RviCrclW7me3uEmiJ3FDawx41u4jd6qg","ano":"2024","anoNum":"2024","vigencia":"Vigente com as alterações da Resolução CD/ANPD nº 31, de 22 de dezembro de 2025","ementa":"Aprova a Agenda Regulatória para o biênio 2025-2026","parceria":"","docs":[{"cat":"Resolução","url":"https://www.in.gov.br/en/web/dou/-/resolucao-n-23-de-9-de-dezembro-de-2024-601118310","ref":""}]},{"secao":"age","secaoNome":"Agenda Regulatória","titulo":"Resolução CD/ANPD nº 11, de 27 de dezembro de 2023","categoria":"Normatização","sei":"00261.001286/2022-93","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4nGuZhbxpRrqIog5YwQ8S_a8Xk2ABpqHPkQ2HQv9MsOJ","ano":"2023","anoNum":"2023","vigencia":"2023 à 2024","ementa":"Altera a Agenda Regulatória para o biênio 2023-2024","parceria":"","docs":[{"cat":"Resolução","url":"https://www.in.gov.br/en/web/dou/-/resolucao-cd/anpd-n-11-de-27-de-dezembro-de-2023-534947737","ref":""}]},{"secao":"age","secaoNome":"Agenda Regulatória","titulo":"Resolução CD/ANPD nº 5, de 13 de março de 2023","categoria":"Normatização","sei":"00261.001920/2022-98","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4g58IqJZocdwVuuD5c4bOybWEAv0h4Xgs-z1XvH7RNT3","ano":"2023","anoNum":"2023","vigencia":"Vigente","ementa":"Aprova a Agenda de Avaliação de Resultado Regulatório para o período 2023-2026","parceria":"","docs":[{"cat":"Resolução","url":"https://www.in.gov.br/en/web/dou/-/resolucao-cd/anpd-n-5-de-13-de-marco-de-2023-469722336","ref":""}]},{"secao":"age","secaoNome":"Agenda Regulatória","titulo":"Portaria ANPD nº 35, de 4 de novembro de 2022","categoria":"Normatização","sei":"00261.001286/2022- 93","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4nGuZhbxpRrqIog5YwQ8S_a8Xk2ABpqHPkQ2HQv9MsOJ","ano":"2022","anoNum":"2022","vigencia":"2023 à 2024","ementa":"Torna pública a Agenda Regulatória para o biênio 2023-2024","parceria":"","docs":[{"cat":"Portaria","url":"https://www.in.gov.br/en/web/dou/-/portaria-anpd-n-35-de-4-de-novembro-de-2022-442057885","ref":""}]},{"secao":"age","secaoNome":"Agenda Regulatória","titulo":"Portaria nº 11, de 27 de janeiro de 2021","categoria":"Normatização","sei":"00261.000027/2021-64","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4v0_JA1aIbtsUPb2o8H5zvI1Qd3QOhL6ZIEjvY09g9CG","ano":"2021","anoNum":"2021","vigencia":"2021 à 2022","ementa":"Torna pública a agenda regulatória para o biênio 2021-2022","parceria":"","docs":[{"cat":"Portaria","url":"https://www.in.gov.br/en/web/dou/-/portaria-n-11-de-27-de-janeiro-de-2021-301143313","ref":""}]},{"secao":"air","secaoNome":"Análises De Impacto Regulatório - Airs","titulo":"Análise de Impacto Regulatório sobre mecanismos de aferição de idade.","categoria":"Normatização","sei":"00261.003182/2026-47","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq3Nzm_W9bmbvTJaTl4g0bZMX4BnTlfy691fRPLuiEXuj","ano":"2026","anoNum":"2026","vigencia":"","ementa":"","parceria":"Superintendência de Regulação","docs":[{"cat":"Relatório de Análise de Impacto Regulatório - RAIR","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzPoCdn0wfhBP2f3FdBx3ntN5hWod40PvvpQb20CaObFA9YF_LiJSNOgckJDmsqQJYQeQmhCk7FKnjLW0Y5L8IGX","ref":""}]},{"secao":"air","secaoNome":"Análises De Impacto Regulatório - Airs","titulo":"Análise de Impacto Regulatório sobre fornecedores de produtos ou serviços de tecnologia da informação: escopo e obrigações gerais do ECA Digital.","categoria":"Normatização","sei":"00261.002701/2026-50","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq8rvIRaoDWtELA-sGpnwTqJLXt5wkZ86dRyiu5AmsnoV","ano":"2026","anoNum":"2026","vigencia":"","ementa":"","parceria":"Superintendência de Regulação","docs":[{"cat":"Relatório de Análise de Impacto Regulatório - RAIR","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzMYglrxf8xFSFI-IJ2xoxKDfKTO8G5QQIcT2SULRi5-yDVHlyE7cvNxGWphwnC_hYjf79rSV2fnMXqGmycNweCJ","ref":""}]},{"secao":"air","secaoNome":"Análises De Impacto Regulatório - Airs","titulo":"Análise de Impacto Regulatório sobre a alterção do regulamento de dosimetria e aplicação de sanções administrativas","categoria":"Normatização","sei":"00261.005964/2026-11","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boqyqseQ-y67Jx_x_w_wTAd9FLmpWJa2nZ-app9m9HMRuE","ano":"2026","anoNum":"2026","vigencia":"","ementa":"","parceria":"Superintendência de Regulação","docs":[{"cat":"Relatório de Análise de Impacto Regulatório - RAIR","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzP1UqLLE7-FwWdeQ393qh9UbNoiXA1eLEKGPBc9afpiLPwk17xXKljE2eUBFpDKSLeijvApx74sxoemoMHS0xRj","ref":""}]},{"secao":"air","secaoNome":"Análises De Impacto Regulatório - Airs","titulo":"Análise de Impacto Regulatório sobre o processo regulatório no âmbito da ANPD","categoria":"Normatização","sei":"00261.005780/2026-51","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq2AMYUg0bL-dvNSNVf3LeoNh0VxlcBsZ39omsJcOa279","ano":"2026","anoNum":"2026","vigencia":"","ementa":"","parceria":"Superintendência de Regulação","docs":[{"cat":"Relatório de Análise de Impacto Regulatório - RAIR","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzOUht9TgWSgAh7VZ98NOapzXnUWPDVBU-a7TQGtqpcruPARWlh-mhUc5X8qhSW_itx-TY-Djv3kxCv67j-IS1Fe","ref":""}]},{"secao":"air","secaoNome":"Análises De Impacto Regulatório - Airs","titulo":"Análise de Impacto Regulatório sobre a alterção do regulamento do processo de fiscalização e do processo administrativo sancionador no âmbito da ANPD","categoria":"Normatização","sei":"00261.005349/2026-12","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq00sL5P0XmVm8-ZhOSyM70neFCcXuWvCHZ7zfyKDvW_X","ano":"2026","anoNum":"2026","vigencia":"","ementa":"","parceria":"Superintendência de Regulação","docs":[{"cat":"Relatório de Análise de Impacto Regulatório - RAIR","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzMkgd1JOBdPHbQYMK5dZ6rP5fVnz7KJ9HVUqT47oi6xvMWPVoW2P2ow13mJiZM4loTQIQab46NUl0Bpg702QsIL","ref":""}]},{"secao":"air","secaoNome":"Análises De Impacto Regulatório - Airs","titulo":"Análise de Impacto Regulatório sobre o regulamento de compartilhamento de dados pessoais no setor público","categoria":"Normatização","sei":"00261.005367/2025-13","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boqwVOYaIRBPibhmTOdzzracUteQ43wo-uqO50SBHfgfAv","ano":"2025","anoNum":"2025","vigencia":"","ementa":"","parceria":"Coordenação-Geral de Normatização","docs":[{"cat":"Relatório de Análise de Impacto Regulatório - RAIR","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzMWM6vP-Lr2dbohyOyoh90cQ4KP1oHnweODEpVQfjPe46OfFg4el2aWI0YuAU0XS_Fxzf2Prp0oEuU6RJ8RhW3r","ref":""}]},{"secao":"air","secaoNome":"Análises De Impacto Regulatório - Airs","titulo":"Análise de Impacto Regulatório sobre o regulamento de Comunicação de Incidente de Segurança com Dados Pessoais","categoria":"Normatização","sei":"00261.000098/2021-67","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4gBrFZF4BsZlly0sebTh5WVZr7z9kpCIlfOsjZJj-ikH","ano":"2023","anoNum":"2023","vigencia":"","ementa":"","parceria":"Coordenação-Geral de Normatização","docs":[{"cat":"Relatório de Análise de Impacto Regulatório - RAIR","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzN2eMSYlHzVQjJncBHNT4LwFs8loq2LsHqV3xhslbwUBjHp9W-zHgO6z6tuwNhnGr3SXWSL3_TPDSI0ESG5UGBO","ref":""}]},{"secao":"air","secaoNome":"Análises De Impacto Regulatório - Airs","titulo":"Análise de Impacto Regulatório sobre o regulamento de Transferências Internacionais de Dados Pessoais e do modelo de cláusulas-padrão contratuais","categoria":"Normatização","sei":"00261.000968/2021-06","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4g-dfBqz6Dd-HdYYfGNurqEiU4zBjj3ez3Yuf5OR7ZyQ","ano":"2023","anoNum":"2023","vigencia":"","ementa":"","parceria":"Coordenação-Geral de Normatização","docs":[{"cat":"Relatório de Análise de Impacto Regulatório - RAIR","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzNQW9IvhGbIBYc4HBvoNqrN9cTrBSk3-EiQZzdgDp-TIp5TXmcXRVmuZ6lGICXAwEakiCATC4oEDjYhmQshS0xZ","ref":""}]},{"secao":"air","secaoNome":"Análises De Impacto Regulatório - Airs","titulo":"Análise de Impacto Regulatório sobre o regulamento de atuação do encarregado","categoria":"Normatização","sei":"00261.000226/2022-53","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4h6G3WUIoOCIR0aJTjCksb6QdMumolQNOljsbmVFOfyv","ano":"2022","anoNum":"2022","vigencia":"","ementa":"","parceria":"Coordenação-Geral de Normatização","docs":[{"cat":"Relatório de Análise de Impacto Regulatório - RAIR","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzMKL69EepXTT5KxjCHh7fQhUSWPbxjTSXJlZs096HZRupdLvUkOSeVGEql12NEJ74IxRuG7sTZPIapcw5n--BKM","ref":""}]},{"secao":"air","secaoNome":"Análises De Impacto Regulatório - Airs","titulo":"Análise de Impacto Regulatório sobre regulamento de dosimetria e aplicação de sanções administrativas","categoria":"Normatização","sei":"00261.000358/2021-02","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4m5BGI0ZuB5e9QlgZW8WWzqVuFBtOBBf7GzD7ipdTq0P","ano":"2022","anoNum":"2022","vigencia":"","ementa":"","parceria":"Coordenação-Geral de Normatização","docs":[{"cat":"Relatório de Análise de Impacto Regulatório - RAIR","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzPjGO38VpMPzlfn4-f4eUPPxCavqC3eTZtRl-cIFCNRoV7Me8QE-oc5ITaVqxTWSkHyykjRNxMk0V3afMuf3vNn","ref":""}]},{"secao":"air","secaoNome":"Análises De Impacto Regulatório - Airs","titulo":"Análise de Impacto Regulatório sobre sobre o regulamento de fiscalização da ANPD","categoria":"Normatização","sei":"00261.000089/2021-76","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4kRFzsrU_YLvKh0eMNLbFwDFsPNFxMNKCv-gMOkolCQ3","ano":"2021","anoNum":"2021","vigencia":"","ementa":"","parceria":"Coordenação-Geral de Normatização","docs":[{"cat":"Relatório de Análise de Impacto Regulatório - RAIR","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzPlSvxEaXlwQ0xJupR5j1f_WqkYVxxRidgHzqtAoHag4nSDN740qnxK1MWLaeYl6WS8fgoVlSEtTij_hXyC1jUZ","ref":""}]},{"secao":"air","secaoNome":"Análises De Impacto Regulatório - Airs","titulo":"Análise de Impacto Regulatório sobre regulamento de aplicação da LGPD para microempresas e empresas de pequeno porte","categoria":"Normatização","sei":"00261.000054/2021-37","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4s0dG1h3AkpHxR09QixsLwi2Dmxnz4zHMcLt6-wYdO_y","ano":"2021","anoNum":"2021","vigencia":"","ementa":"","parceria":"Coordenação-Geral de Normatização","docs":[{"cat":"Relatório de Análise de Impacto Regulatório - RAIR","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzO0MRHHJkhj1HTgaUE34vf_TF7_hrhUiUs7HE-JmzF-0jmacuT7BjP0LZ3ktsDglVUx2jWOxYh0ifwW7zl5xBKp","ref":""}]},{"secao":"out","secaoNome":"Outras Publicações","titulo":"Portaria nº 16, de 8 de julho de 2021","categoria":"Normatização","sei":"00261.000347/2021-14","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4ktXE4FZjbAFuzYagBRwJhmBirBm_UP38HlHLSxhNbiP","ano":"2021","anoNum":"2021","vigencia":"Vigente","ementa":"Aprova o processo de regulamentação no âmbito da Autoridade Nacional de Proteção de Dados","parceria":"","docs":[{"cat":"Portaria","url":"https://www.in.gov.br/en/web/dou/-/portaria-n-16-de-8-de-julho-de-2021-330970241","ref":""}]},{"secao":"out","secaoNome":"Outras Publicações","titulo":"Enunciado CD/ANPD nº 1, de 22 de maio de 2023","categoria":"Normatização","sei":"00261.001880/2022-84","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?z3-naSmpl6_63qczD0vsEegOjw-LCorm020SWqclP62HKAZ52m_NOA3XovV2mCyVF59RvlCdEV6BmAE9PzKZ4pV4COZdlPZJ7T1wcsLzusAyzNZ732KPCv5SwU5hah-h","ano":"2023","anoNum":"2023","vigencia":"Vigente","ementa":"Dispõe acerca do tratamento de dados pessoais de crianças e adolescentes","parceria":"","docs":[{"cat":"Enunciado","url":"https://www.in.gov.br/en/web/dou/-/enunciado-cd/anpd-n-1-de-22-de-maio-de-2023-485306934","ref":""}]},{"secao":"out","secaoNome":"Outras Publicações","titulo":"Fascículo Vazamento de Dados","categoria":"Segurança da Informação e Proteção de Dados Pessoais","sei":"00261.000388/2021-19","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq5NdYXEPzgMGjzVa84CPPLclXaLVXADd6pw4xFwp0bXn","ano":"2024","anoNum":"2024","vigencia":"","ementa":"Orientações para prevenção e resposta a vazamentos de dados pessoais","parceria":"Núcleo de Informação e Coordenação do Ponto BR - NIC.br, Comitê Gestor da Internet no Brasil - CGI.br e CERT.br","docs":[{"cat":"Cartilha","url":"https://cartilha.cert.br/fasciculos/vazamento-de-dados/fasciculo-vazamento-de-dados.pdf","ref":""}]},{"secao":"out","secaoNome":"Outras Publicações","titulo":"Fascículo Proteção de Dados","categoria":"Segurança da Informação e Proteção de Dados Pessoais","sei":"00261.000388/2021-19","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq5NdYXEPzgMGjzVa84CPPLclXaLVXADd6pw4xFwp0bXn","ano":"2024","anoNum":"2024","vigencia":"","ementa":"Orientações para proteção de dados pessoais na internet","parceria":"Núcleo de Informação e Coordenação do Ponto BR - NIC.br, Comitê Gestor da Internet no Brasil - CGI.br e CERT.br","docs":[{"cat":"Cartilha","url":"https://cartilha.cert.br/fasciculos/protecao-de-dados/fasciculo-protecao-de-dados.pdf","ref":""}]},{"secao":"out","secaoNome":"Outras Publicações","titulo":"Diretrizes gerais da Política Nacional de Proteção de Dados Pessoais e da Privacidade","categoria":"Normatização","sei":"00261.006960/2024-98","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq8Cbgg4dUk9ol5PZhLGfH-DhczQfZ46LDhWG2C49X-Vi","ano":"2026","anoNum":"2026","vigencia":"Vigente","ementa":"Organização dos eixos estratégicos propostos pela Autoridade Nacional de Proteção de Dados (ANPD) para orientar a atuação pública e privada no Brasil","parceria":"","docs":[{"cat":"Documento","url":"https://www.gov.br/anpd/pt-br/centrais-de-conteudo/outros-documentos-e-publicacoes-institucionais/diretrizes-para-a-politica-nacional-de-protecao-de-dados-pessoais-e-da-privacidade-pnpd.pdf/@@display-file/file","ref":""}]},{"secao":"out","secaoNome":"Outras Publicações","titulo":"Relatório de inteligência regulatória mapeamento de tendências para a Agenda Regulatória 2027/2028","categoria":"Inteligência Regulatória","sei":"00261.005237/2026-53","seiUrl":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_processo_exibir.php?wt7h6hFBI_9S3DJjGLl0dpQiiSEQL4RcICP821UP_Zu3te9Mz8pMgdSFPXZPRHsDc8jMQ17erGYJfOcrc-boq2AeD7ibeqpYwPvc4d8CUkHJKHiEfm1vY2jt9NHVI_HI","ano":"2026","anoNum":"2026","vigencia":"","ementa":"A Inteligência Regulatória é uma atividade do planejamento regulatório da ANPD, voltada à identificação e análise de lacunas/problemas regulatórios que podem compor as iniciativas da Agenda Regulatória 2027/2028","parceria":"CGPAR","docs":[{"cat":"Documento","url":"https://sei.anpd.gov.br/sei/modulos/pesquisa/md_pesq_documento_consulta_externa.php?yPDszXhdoNcWQHJaQlHJmJIqCNXRK_Sh2SMdn1U-tzO4IyN01DPG0l3lRatC-RRmEGqxP-saOvVwagcx4xtKI6HYM4NOXeMpYkwdP9_mkqrBQVlNgxUwyhSaS425fk_p","ref":""}]},{"secao":"out","secaoNome":"Outras Publicações","titulo":"Relatório da execução da Agenda Regulatória da Agência Nacional de Proteção de Dados (ANPD) 1º semestre 2026","categoria":"Agenda Regulatória","sei":"","seiUrl":"","ano":"2026","anoNum":"2026","vigencia":"","ementa":"Trata-se da divulgação da execução da Agenda Regulatória da Agência Nacional de Proteção de Dados (ANPD) para o biênio 2025-2026","parceria":"","docs":[{"cat":"Documento","url":"https://www.gov.br/anpd/pt-br/assuntos/regulacao/agenda-regulatoria-1/agenda-regulatoria-2025-2026/balanco-agenda-regulatoria-2025-2026-01-2026.pdf/@@display-file/file","ref":""}]},{"secao":"out","secaoNome":"Outras Publicações","titulo":"Relatório da execução da Agenda Regulatória da Agência Nacional de Proteção de Dados (ANPD) 2º semestre 2025","categoria":"Agenda Regulatória","sei":"","seiUrl":"","ano":"2026","anoNum":"2026","vigencia":"","ementa":"Trata-se da divulgação da execução da Agenda Regulatória da Agência Nacional de Proteção de Dados (ANPD) para o biênio 2025-2026","parceria":"","docs":[{"cat":"Documento","url":"https://www.gov.br/anpd/pt-br/assuntos/regulacao/agenda-regulatoria-1/agenda-regulatoria-2025-2026/balanco-agenda-regulatoria-2025-2026-02-2025.pdf/@@display-file/file","ref":""}]},{"secao":"out","secaoNome":"Outras Publicações","titulo":"Relatório da execução da Agenda Regulatória da Agência Nacional de Proteção de Dados (ANPD) 1º semestre 2025","categoria":"Agenda Regulatória","sei":"","seiUrl":"","ano":"2025","anoNum":"2025","vigencia":"","ementa":"Trata-se da divulgação da execução da Agenda Regulatória da Agência Nacional de Proteção de Dados (ANPD) para o biênio 2025-2026","parceria":"","docs":[{"cat":"Documento","url":"https://www.gov.br/anpd/pt-br/assuntos/regulacao/agenda-regulatoria-1/agenda-regulatoria-2025-2026/balanco-agenda-regulatoria-2025-2026-01-2025.pdf/@@display-file/file","ref":""}]},{"secao":"out","secaoNome":"Outras Publicações","titulo":"Relatório da execução da Agenda Regulatória da Agência Nacional de Proteção de Dados (ANPD) 2º semestre 2024","categoria":"Agenda Regulatória","sei":"","seiUrl":"","ano":"2025","anoNum":"2025","vigencia":"","ementa":"Trata-se da divulgação da execução da Agenda Regulatória da Agência Nacional de Proteção de Dados (ANPD) para o biênio 2023-2024","parceria":"","docs":[{"cat":"Documento","url":"https://www.gov.br/anpd/pt-br/acesso-a-informacao/acoes-e-programas/governanca/governanca-estrategica/anpd___rel_agenda_regulatoria___bienio_2023_2024___segundo_semestre_2024.pdf/@@display-file/file","ref":""}]},{"secao":"out","secaoNome":"Outras Publicações","titulo":"Relatório da execução da Agenda Regulatória da Agência Nacional de Proteção de Dados (ANPD) 1º semestre 2024","categoria":"Agenda Regulatória","sei":"","seiUrl":"","ano":"2024","anoNum":"2024","vigencia":"","ementa":"Trata-se da divulgação da execução da Agenda Regulatória da Agência Nacional de Proteção de Dados (ANPD) para o biênio 2023-2024","parceria":"","docs":[{"cat":"Documento","url":"https://www.gov.br/anpd/pt-br/acesso-a-informacao/acoes-e-programas/governanca/governanca-estrategica/anpd-rel-agenda-regulatoria-bienio-2023-2024-primeiro-semestre-2024.pdf/@@display-file/file","ref":""}]},{"secao":"out","secaoNome":"Outras Publicações","titulo":"Relatório da execução da Agenda Regulatória da Agência Nacional de Proteção de Dados (ANPD) 2º semestre 2023","categoria":"Agenda Regulatória","sei":"","seiUrl":"","ano":"2024","anoNum":"2024","vigencia":"","ementa":"Trata-se da divulgação da execução da Agenda Regulatória da Agência Nacional de Proteção de Dados (ANPD) para o biênio 2023-2024","parceria":"","docs":[{"cat":"Documento","url":"https://www.gov.br/anpd/pt-br/acesso-a-informacao/acoes-e-programas/governanca/governanca-estrategica/relatorio-da-agenda-regulatoria-2o-semestre-2023.pdf/@@display-file/file","ref":""}]},{"secao":"out","secaoNome":"Outras Publicações","titulo":"Relatório da execução da Agenda Regulatória da Agência Nacional de Proteção de Dados (ANPD) 1º semestre 2023","categoria":"Agenda Regulatória","sei":"","seiUrl":"","ano":"2023","anoNum":"2023","vigencia":"","ementa":"Trata-se da divulgação da execução da Agenda Regulatória da Agência Nacional de Proteção de Dados (ANPD) para o biênio 2023-2024","parceria":"","docs":[{"cat":"Documento","url":"https://www.gov.br/anpd/pt-br/acesso-a-informacao/acoes-e-programas/governanca/governanca-estrategica/rel-agendaregulatoria20232034-1_2023.pdf/@@display-file/file","ref":""}]},{"secao":"out","secaoNome":"Outras Publicações","titulo":"Relatório da execução da Agenda Regulatória da Agência Nacional de Proteção de Dados (ANPD) 2º semestre 2022","categoria":"Agenda Regulatória","sei":"","seiUrl":"","ano":"2023","anoNum":"2023","vigencia":"","ementa":"Trata-se da divulgação da execução da Agenda Regulatória da Agência Nacional de Proteção de Dados (ANPD) para o biênio 2021-2022","parceria":"","docs":[{"cat":"Documento","url":"https://www.gov.br/anpd/pt-br/acesso-a-informacao/acoes-e-programas/governanca/governanca-estrategica/balanco-agenda-regulatoria-2021_2022-2_2022_-2_2022.pdf/@@display-file/file","ref":""}]},{"secao":"out","secaoNome":"Outras Publicações","titulo":"Relatório da execução da Agenda Regulatória da Agência Nacional de Proteção de Dados (ANPD) 1º semestre 2022","categoria":"Agenda Regulatória","sei":"","seiUrl":"","ano":"2022","anoNum":"2022","vigencia":"","ementa":"Trata-se da divulgação da execução da Agenda Regulatória da Agência Nacional de Proteção de Dados (ANPD) para o biênio 2021-2022","parceria":"","docs":[{"cat":"Documento","url":"https://www.gov.br/anpd/pt-br/acesso-a-informacao/acoes-e-programas/governanca/governanca-estrategica/sei_00261-000027_2021_64-nt-n-25-relatorio-de-acompanhamento-1_2022.pdf/@@display-file/file","ref":""}]},{"secao":"out","secaoNome":"Outras Publicações","titulo":"Relatório da execução da Agenda Regulatória da Agência Nacional de Proteção de Dados (ANPD) 2º semestre 2021","categoria":"Agenda Regulatória","sei":"","seiUrl":"","ano":"2022","anoNum":"2022","vigencia":"","ementa":"Trata-se da divulgação da execução da Agenda Regulatória da Agência Nacional de Proteção de Dados (ANPD) para o biênio 2021-2022","parceria":"","docs":[{"cat":"Documento","url":"https://www.gov.br/anpd/pt-br/acesso-a-informacao/acoes-e-programas/governanca/governanca-estrategica/sei_00261-000027_2021_64-2_2021.pdf/@@display-file/file","ref":""}]},{"secao":"out","secaoNome":"Outras Publicações","titulo":"Relatório da execução da Agenda Regulatória da Agência Nacional de Proteção de Dados (ANPD) 1º semestre 2021","categoria":"Agenda Regulatória","sei":"","seiUrl":"","ano":"2021","anoNum":"2021","vigencia":"","ementa":"Trata-se da divulgação da execução da Agenda Regulatória da Agência Nacional de Proteção de Dados (ANPD) para o biênio 2021-2022","parceria":"","docs":[{"cat":"Documento","url":"https://www.gov.br/anpd/pt-br/acesso-a-informacao/acoes-e-programas/governanca/governanca-estrategica/nota-tecnica-no-232021cgnanpd-1_2021.pdf/@@display-file/file","ref":""}]}],"anosInstr":["2021","2022","2023","2024","2025","2026"],"anosPub":["2021","2022","2023","2024","2025","2026"],"plataformas":["Brasil Participativo","E-mail","Microsoft Forms","Participa + Brasil","YouTube"],"categorias":["Agenda Regulatória","Compartilhamento de Dados e Interoperabilidade Governamental","Direito Digital","Direito Digital e Proteção de Dados","Direito Digital e Proteção de Dados Pessoais","Direito Digital e Segurança da informação","Inteligência Regulatória","Normatização","Regulação da Proteção de Dados e Direito Digital","Segurança da Informação e Proteção de Dados Pessoais"],"totais":{"bases":5,"instrumentos":43,"publicacoes":50,"contribuicoes":10843,"contribuintes":1262,"oral":371,"espectadores":31929,"docsInstr":182,"docsPub":51,"links":308,"linksSei":221,"cpComContrib":8,"tsComContribuintes":19,"apComRegistro":10},"atualizacao":"Dados de novembro de 2026"};
+
+/* Logotipo da ANPD embutido como data URI — nenhuma requisição externa. */
+var LOGO_ANPD = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUkAAACECAYAAAAdi9l2AAAxrklEQVR42u29eZhlVXnv/3nXns6pqqbpBsRmkAAREFRUYhTjvXSDV1H5gSLdCgEUVBrCFPSqMfGmKBOSGKOoCaMD1yA0dINMiWAUGhSFODHzgLlhUhlsoLu6q+qcs4f1/v7Y+1Sdqq4zVHVVd53q9X2e/XRxOMNea6/1Xe/8wkT09xscHBwcHMbw+vOO+MAb/urIWw7488PfBHBY/2G+mxUHBwcHMAAWPc8L/aNC3/zgNecufctdA3eljigdHBwcCpIUSyUdqmUoi4PAv/Xgsw7/Y0eUDg4ODgVJqiBijKeZjUEWacncdqAjSgcHBwfGOWlU8GyaZSCL/JJ328HnOaJ0cHBwJDkOIlIQJYvUcxKlg4ODI0kmJcoks3WJ8vXOmePg4OBIcgJRGjF1iZIguPVAp3o7ODg4kmyuevuecTZKBwcHR5LNiVKcjdLBwcGRZDuidF5vBwcHR5JtVG/1vNucjdLBwcGR5GREmWQWWOR7zuvt4ODgSHJzonRebwcHB0eSnavezuvt4ODgSLIlUTqvt4ODgyPJtkTpvN4ODg6OJNuo3tbzvu9slA4ODo4kJyPKJLMCOzqvt4ODgyPJyYhygtfbEaWDg4MjyRaqN4F/q7NROjg4OJJsSpSF19sRpYODgyPJ5kTpe87r7eDg4EiypeptPe/7rgvj5lPUcHXb/UoXz3Wza1v85nSubpvXrh+nmdUZbPB6B86ZMxHacHXb/epsr51ZvvfJrm3xm9O5BPAAv7jMNiQVncWrzk+NY/W2xVhnfaE7r3fLuTcNz2AuS2f1jWka/rVdRJRei6txTLM1X1t61b+nTkwZkBaXLV7ztjKJmBkeY+N31cdgJ4w1azgothppbhWiqqvexvcWEQS3Hnze4UfeNXDHzw7rP8y/a+CudDtTsU0Qlv5d4dUICUoArE3j6scayGcukUsWRNGpquaziGaAoHiI/FNaq1xSrKG5+AwNYKMo2idDbkMxDRus8YlkqHii9tokqf1VfcxbMl9hWPori3wE0QwdJbeZWD2xoIOK/F7Q/wYewXr3J8nIo0Blwr7OZklCrq+JC1Xlvfn8zeAY83GmoMOiskFF1wk8BTyhIo+lxvyakZHnJ6w5r4FUZ3zMW02aayTKwuu9vRGlB1gvio4AeZfUn2W+ZfcJw/CLcRz/eo4RpQCoys4i7Dvh1YvDsPy7OK7cPIeJElUNReTVLeUNAUV2mwGJXgpRb8nofMnMPxIZPQMUjMUPS08Cdyj2+iyOf9DwLLaE8Nvp2XvM3hiLLxWQBgFfVAkyu5EwehyRn4ratXGp9GM2bnx5Ng+IraouTfR6b2eqtwJqkHNBFUgKMoxBUDFnTCrpzA003OuoCmRVdJXv+39UbEpvDs970njfE64YsJL/O2MS34T5mskryy+tq5+IsLeIfNSI+Z4fle7zo/JZQG/x/2fLZjmbY2wYq6ZjFxbYAZE3g5yrYm4MqrVH/Si60gvDdxdrMG0wP0jXkeR4omSRBsFt24nX2wNsGIYHAu8sXguK+Q9y0tQT2WGHxcVCmItezEYbap0Qe8TzbyqVSq9q2JBzEabdpTM759LJb07zqtvv/PFqZk4iAq8V+Gc/Kv0qCErHT7BZ0iVjbByrz3gnlTaOF5FdBTmxOCB+5UfRmcAODdKk13UkOUqU25fXu1DDzBkg/gQVSPL/Njv51eqJs7SgZ4t4MmC3VLmlWJjd5vWeLzANJGJBU4H9MFztR6U19LFL8az8ebKXzATSzIoD4vWC/Isflu73o+iMBnPDFkmV22xBb0de75xM+vp2Bk4oVG1v8/eokqvcwWzZkWZJQk4FeX0QllbTvXGU85EwLZAJcpwfl+4Ngp5DClV0vu2vxkgCC6Qi7C2Yi4OodI9fKv3PBqnSTHdCt93oxuV6z1uiNID6cXYSIouLByaTvMcKcoAXlo/sImmSfNNpisi7/LB02Uyc3NsRphM7OJV154GmIuyDsXd4UXT4NiDKLYmT3IIDQlPgzaLcFUTlfyiEDzudfbXNVaOJRTHmWa53oUoTIHp6IUWaVuvJoOc0LK5ugQ+aiMjH/LD018xtR85cWx9TzUKpxw126sGtm3d2MMgtvl9+y1Z+PtPNuGkWDzpVadoCnwnC8h2lUmmv6Zgd5oT9aB57vQ2gYRi+R5D9aB2A7QGKcHgQ9LxhuqfeNkRQSC0DQRR9ZJ6qdjONYdD1HVwbgJGxdSKNgdSdkGXdNtcjnt5Iubw7Wy8ZYKjDMRYXQ+Qec2kYa2NmUToFc1ThANIU0bdnVn/ScEh0vDZncxHrJCdKW6I0vlf3eh9518Cd/9nlcZRayIdnd3gIZiC+ij0T+HgXjrfYjPINL4p+m9VqP2QOx1BuQ2SAp+in01ppFWQ+eC3mSIVS3Btk2WIr/t6IPcQohyFyaMMeztocqvXwmFcGmV6ZwBETpLaZhgWMVXtKFpdvh8wDrz259SRRlGU91nqLrOgegu6H6MEgbxLYPydNbZzHTkKc8jUosrt4+kPPi47NarUfdLo2/RmiAlXUgqigBhGDiIzNvoLd7D2bGfjrXm8TeHWv97u7mCjzzISg542IXdahZOiBqggfpKfnrxkZeY65l4XTkWplkOtMELw9SZKHmcWg5q7WtUU2wuD6jt5c5eUEfgPJA8CNGRAEvQdh0o+CfBzo64Ao62SxzI/KZ6a1yr/M+iEmMtjxGMnl5drYf/2yUSoMw/AAi/cuQT+AyJ+AeAXDZB3srbrZoc8gNxFFR2W12h2drM0tEbdV0QxVK56IXwo8vxz4JvQNAlitWmuH1doRtaTim/HvyQPoU3Q8Acw3r3cuFUqnRFeoT7IgTO0pc8kkMlUTA7AQ8W6mp+eVzO0Yym24ONQvnnnQgY1uYuygJMnwI0mt9glR+2aU2zo8jDxQK+jne3t7d2VyR+JsjNGfgj1ysnhQG8fxo2lcuTCJa29XI29R1SsK1dzr0GZZf1/ZIDcGQc8bOyFYM71x5zm8fhh4JvKNqj6Xxel3bS39lCbZu0XM66zx9vOE/T1hP4H9JeXtWTX9SFpNLsqS7FeA9cuBL74xqpqhYwOcB17vnBR7epaI6IomYT8tPqsoehpQnvVFPHvjTxH2DtLsxmIc4DzeE6WsqXh7GzNu6lklBvDjOH4siavvBi5sUKtbHcQWZFGcpucx25EUUxtj41gzxjupGuMjJa1UfpbG1VOx2ZtBr29Qu7MO1mYGLFDJbqS39xXt7LP+FNnRQi41ZnGaZXF2i0H+1dh07QNfvWvD5lrXuA8/AfoT4NsArzvvHa/LaslxwEl+KdjbphabZpmIeBNtlAT+ra/pLtXbAKmf2lMQs6AIR/Cn8NkMMXsFQel9SVJd1aV2vbpq9xY/Kl2V1qrHTuHEd+jc7lff4JLUqp8IwlKAyFmgrSQkL1cE+SjwD8CGWbRNzphM2kCgjI45SR4EjguC0gcRvoqwK+0dM3l8r8irgiS7MoF3UXecTjIHpnN+1EwCz5jAiE3SVVbtIQ9d+MP3P3DhD2544Gt3bwDMGDU2Hnx2dF+M/v/Vq72HLrz9oYe+fHt/Vk1fn8X2LJRn/HLgodi6VNno9e6izJz6aVYCPl7M+TQkdlVEz27YDN0IH0gEeX8Qlb7aoe3IYfpk6SVx9RywP22jeufSpJidg1LpmAbi6LYx1804XpJUr/UMb0H1xx0KFfVD/J1+WPpU8X7TXJLU1mqQKqlfDnwbZ4+rcu6DX779+wBcdlkgK1cmqhmsXWt04x+9FmsPBvZHdFeyrIQYCwxizJNqvEdQfYBjFrwA0A9m4KI7hxG56IAzj7gmsPo3JvTO0MxiM2tFxDTzei9fvdxbs2LNXHQGeEAalErvQ+UP2pzozQpa5BKXyKF+qfS2tFq9h+51fgS5JC3n+GHpmTSufqmwwSWO22Zc0sr/tfZMjPfz9sSnqspxhXbXrdJ9XYDwq9Xq08A7/Kh8paArOpMoNRPhb8Iw/Lc4jh9jEkepX5wrQ8jk0oqiWU6Q6aqhTXLGE5f/cPDA1avDR1esiFm5MtHrXz6YIDqJQftesAfQswBERtm1XvIIgDSBuLKBGzfdjWHVQHX9DYhUDuvv9+8a+PxLoH/2uj8//A587+sm8Ha0Sa5+N3q9w0L1XrNizX/S328YGLBz8qFZPRtpu/CkzfcYVM8GftrlG7ie+fFPQVD6TZJUV+NCg2YDWS5VJff7kXeTIB9oYeox5Dv1UGDHLlG5W6EuCSZprfJBP4pSwZzQxtRV33+RYr5KXnzGTK5uC98Tz5iJnmYg9aPAs9X0gge/dPsJT1x+++Ahl50WPLpiRcxNmw7iluGr8f1fUur5JL5/ANbC8IaMTetTNq1PGRpMGSr+3rQ+pTJkQXakVD6KsOcqSjvdxw0bP3bXwEAKyh9+9avRQ1+54zpbTZeq6tNe6HuFkwgxYsiyLMMsCj3/1q984Q2vZmBA+/vnlNfUA6zvl9+KyNtobRSPQf6xhSrtASrI+4iiP6A7PMTaYjHm0rHhX/1S6U9wweazae4RRb/RxtRTJ8Sd/FLptVM1v81hqVIAk9ZqJ6Naj4XM2uzZDOF/eWHPUZOZhAz9/aaPkX9NR2o/98thoJqf7gqpF/l+Fmefe/DC2z93yGWXBaD8cuXlCTds+EvE/JywfDxZ5rFpfUpcKTa7eIj4+YU/9rf4iBiyVBnZmDEymCGyP70Lvs7Nw2u5bt0B/+/cc2t79V9ReuRf1j5gkmSppvZpL/A8VbV5XIl4wzVNL3j184vO3ed3ewN6/kFz0GNq7NnFIWWbnPYKen9Sq3xW4THGG6Qn2Dal5MFpXbKIpQXpj57aYvWGKIr+EJe+OFvSpGa12k9RfZGxkKwm7xVQPagDzabb1G+bxOGHVHmSzmKNVST7PGMOnEZJcoB7L7y3ktWyo22cPuhHvq+qNb8U+Gkt/epDX/7hBX949tnRL1euTFj93wu5adNNLFh4AVlSZmh9ztAifhEL2ME2EsmDQMUjqVo2rU8JS0sp9d3DmnXHPD1wSnWv/itKD3z1rqdIk6OsZdDzjFhURzKj/7Tv7/S9S9bpUC2cazYtA2SlUmkvEXl/67AfEYUrAItyRWGfsJN/p2KUU4AFzO1woATVF9osyMJzL7tkyM1F/UwXQznz0rwBNoI8PIE4mp1e+86zOSg8/htfxvBh2hfOqGttb/TC8EgmJH4YBrD095tHL77r+bSSvCtLs/vDheUoq6Y/fPjC28875LLTgv/3z/8cc9WGRUSv+D49fUczuD7BWkXMFkoBYhDxGR5MydIdKS+4kete/MjTA6dU97qiv/Tg1+562MuSD6vvyUjq6T/u+7vs2N1e8mwSSMnMObIwAEmmHwNpFt+YE6fadWmtdA0gUeD9K+hgoRbo5KRiXhlE0QeZ49WBrHCiwkOMxaI1W5CpIK8JqvH1jA+kdpjBtajwxFhHiRasqrxynkrUflqt/hjlIsbCz1odLmow5040HeUn+MCAZfly79GL73peE3tkNpJ8H9WVoPxyv+OVtRrRa/6Nct9b2Lg+QSQo0gpnSEkTnzS2pDVLecEVrHn+mKdPGagedkV/6f6v3HnT4JB+8YsHvmCOXfIilcTDyJyzLdfDfvpEOLWFLSgrHFlXweAGIBweHv69KtcVizlrtowVOasN+WxrBJ7q0x56DLC+zaIsyqux1A+jb+HKq83OohR9sc2MCigIO0wkhvkkUSZx1N+BluMVM7IsDMMDaAgwH9vIa9Zk9GMe/todLzzwxf848qGv3P4E/Xd6LFuW8tLLl9G34G1sKghyVp6oMWQZpLESLfhO+N0nX/OjUwaqX/rS8vJThz209/t3fVFriS/e3NxGHqBBFC0XMbu1UCHzkAPVr49Tg6xc2kI9r6sCBxf1AOesNGmtt6hWqz1p0eMYC/HR5kRJImJODKLo73COnNlAR9EDwuienpckCYPrFflSYdbS1tKn+CryoUYhcvxGHsCOxnyvXeszsCxlzUvHs8Pik9m4YfYIcuzoM6SxlTDsS3XRN49bvXrxWUt+vJqyf1y1ghqZs6pm/dQ5syC7ZuK/oNwRx/GjxfsTwKRp5Reg99A8raoQTWVO15oUkQQwWa12B5ZTCzt11pooNQX5rB9Fpxfz4Yhy5p5IT5uVovmS1OEGjWg+qt2SxtVvoPZFJnHMTJSsFXlfo9ZmJnmb0t8vLF2asVoX4pkvUR1RUG8rbTTPDA+plZ5Dz8iu/HkYxkdVNqr1ZM4a9+utYg8DOaSdpCfIxeNMHaNhWHJpizXqFeR7ZBiGr2Fu95KxQJQk1e+o6F9O0tNnopnCAzLBXOyF4XudRDkj0MJIs6Szd8uGeUyS9b2yHmRVa7NWvm8FXhuG4f71z06+0ZYuNYgo/uAZLNhxCUk169h7vSUEiWIQMunhsuS8dJl39z7VuMf6Yue891OgVdiPBTxVnojjyq0TJMYMkKRavQG1z9LclpeBBCrmdOZ+w62U3Gj+96heUhBl2oIoBRQj5pogCN6ECw2aiYMKhP06SYs1ht9tD2K1enJVMR9e67UrnhU5bGx6NuNdFZYtS7lZe7D2TKojimxFgqRHL40/aU9Lr/Craa/1mNMEachbxb5akPe2sCvagkCvIC+X1yjy1z8zhHBlC6ItihLoibBgJ+Z2OFC99L6XxNUzQf+tDVHWY/n6VMzNlEp74kKDtmRNarlc3kOQA9pIiLl6mfH4PJ+TDCCtVH6p8Gtax/PWV/DbmaDyjWFN8Vq2/gh6d9iDpGZnW4psJMhL4k/aldm3vIrszBwnyPriUxVZCRLSKuwHHfFNXgFpkgdk86NOvwkaN7Gb1IsSLPbD9CTmfrOw0QD5pFb9kKK/onX2gwEyEdndV24iLyLrWtROjyRJrX1Xi1C0cYc8ZA81WZfzCXnombK2hSBSzImCyMF1jW/zBfjInVJM1zF4njbWeZwdlrENBPkJe3pBkP7cT+stVOaFO4Kc3EKKzPLgcb2lWq3+pok6bQETx/F/KfxH4YXLmp38eVMxQuZ+rcl6AY/hwMgxqloff7sYyjf6Uena8eq4wxTmHOC0Nv49m5/LPJkkyX9N+Ox8PkLuLobZQroGgb1781qTujlJDixLWb3aAw4lrgmz6DDJCdKMSpCnZ1d0C0GO2jX8qHoCyC6M5Y02O5ku6YB0xai9pIUdqWg9y/5hWH433dF61gJepVL5rah3NLCJ1vFqPmgq8J4gLF2CK682FfhAFobl48D8cZu5K1qpcDt5dW9/npNkvt4y74E2+6YeJtRbq9m9Nt+Iqvkm997zCpC9SOO2ZdRmgiAvjT/ZTRJko53DB/6sxcmUAUbh/rRa/TGtKydnAHEc/0Dh8RZEouTGyXO6SEXKAD9JRu63aj/UOI4Wmz1BZKUflv6S3JYZ4NBWnaS39xWK/QqobSOBG1CxotduJ1KkAiTJ8DOgL7bZOxbAGPbYnCTXrCn+O1mC7/diM53RzJpRgtQGgvzEqA2yiwjSA9SLoncI5iBaln8XQC+j40ZgJCjfbO3AAYSlQdDzpi6RJqkTXRbH3wM9Pc/fb5k95Bfl1S4IgtJJuBjKthIk0Bsk6fWI7N6geTRXteGRrFb7EZ21PZgvZoiNijzX9r0iWGHJJJO4vD7lO+KHtAiM3kKClAaCvKLbCHJ0wo3KuaNdYyd/jwf2pbQ0al9rtxAtQOibK0E30TzwNQMxKvasLpMAEsBParXLwV5A65qSozGUGL7pRdEyXAzlxPmpN9dKy+Xy7kEY3YqYt9M+MsDmlWb0n9i+wq0MoKKs60R6Nqo7tzhpxJudpzrRi92VBOkBNgiC1yK8o4UkV5ShkmsYHFxP60j/RpL0RkZGnlfV77Zw4NRbzy4vl8u70V3hMmlBlJ9T1Ss7IEoBAoNcXwTSz59NrdrYFbDd5TdcdbtZChAEpROSzP4nIv+jTSX8UdOHog8ntdpVzO16ALNxsIBoRy1uVbSvOUlmNp5pIbLRi31pd3mxm50jZ7TJJvFAM9R8fXpnnlzWwoFTrzXZl2V6ahvVai4iA7w0rn2UPCSjXQylBRZZzC1Fd7v5EUMpMlyMpcZYd8BmV9pwablc3j2IolODKLoHw1WSq9jtCHLUDlzYtBO6uxr5dNXASifVkVDpZTPVZXnxIdWXiKs6U/GRE73YXSpBMnrq9vXtQpKe0DrsB4PyoyQZeWCKp3UGmLRavSeIop+BNPNSGvKuaR8HvgxUumjB1zdrkpSjD/jV2t0CB7bY5EUMJfsGib0hgSPIPbLdusGLfnn6R14UvUzr+FEFjKemz4pdIsh+qL4xtfoGkAUNGoh0IGGnIAHYC7NabS3d2zdpa+73zew7+YIz5rdY+zJ+sBNpskXOm/Fe7E90M0GOSjV+nJ6MyI6t+2eIoHrpBGloSr8DXJqTpNKcOMyrglLpfUm1ejXd1Tcmd2QNDq73ouhoq/JThFY9kHPvrfA2P4iuTJPa8gZy0W7cfCCfMvCpDlW/sWg8GXegSodSdQIEqN6RxLVP076+4nyG3yF5VTZX0UQUVeH9izaA/JogApFpT+R0vNiai2dNL1qHjsz26Z8BIcLKFqpwkadtn06S6i1Mz3OYASS12vVgX2i9oFWLZmHShYs+A/xarfbfang/UB13WE+6uDUVI8cFUflLdL99crLey82uLD+UNW04GLypEKSi9yVx9bji89tt/3NBdmwTUF5/PMOTb/I764tO78IP8nqv0ybIiV7sXdpKkCb3VjS92HYZGB6gYVh+ryCvbmEXsyCI8O1CBfamsRi1OO02Ale1CQdSkLf6pdLb6CzMaK6hXgzjp1bl5AYpunUMJXzCD8Nz6e4YyroU2MnV6LzptECxjqrYqveUasE7yQsiy3ZKkLaQK3buaBOqvDw5Sa5bU0xe9l2qw9OKwRvvxZ6aim3n7sOz+arTc1qERtXztKsmL2bBFkh39XzubxTSQ6vMCQppsltRxFBW1qjaT3YYQ5mJmK+EYflYXAxlE3JEQHxV+50krr1jiKEXp2H6mT8CZD4vPcBuTDRcTDKDojw7uW6+YkVGvxo+wC+4fv3PKPf9MdWhrNOwoM1tkN9qKUGqor6HpBlDYvQ96ulLmqHYJj0arJo4VROmPAkgK7aK4bkI++l5E2L/J63DfnzFfr9Wqz0DRGyZJ9aP4/jxICzdWYQbTebYyMOBkGOiKNq7Vqs92aUbIQH8NI6/HESlPYE/p3lcZF0Csyr6Hb9cPjytVO7F9fKuV1/yQXxU1yH2r9K49vUxRW27tUNKrgmGe6rIK9uQpAeKKs/Q9PQ9H2FALGb9FzHedagWIXtTJcjOVOxCl04DL71PVqwbUm3eBlNkm0maqmLPEsQUkl2T3GrNxHqfLxZjbUZ+2DAgyuFNHqoUKlXJoqcBn+3izZCnL9aq5/lR6VWCHNvCOVaXDMqS6Y1RFL2tVqs9wfblsa3b5+2YWi4+aBXVbyeGC6jWfsNYKbrtlSBHD4jM815vrHo0j6SoF2WpBoE8labNSFIkKwJdv8v1L91N745vz/tkG29qBNm5F1sVb5Ao1KtfsWu8yv9PI0TWjt4wQBaW8ZJVnOg/9uxaDkK2khSZh++Uy7uJ1eUtwn7qZb2GMdnxQRStmDEVQTUCiYFSw0OcSM6KcgqL+XteZlOX2p3qkpBJa9UTgyi6A+SttAkNQtg1Q26GhW8vGqx1SwzldD3zdUm6sM+LyZeJPiOia0T163EcP96gBbkwn/qCyfSwotVNK5OZKDxZqVSep60dR0S5/qUzSGq/wA980nTScKCZysW2hBlZNcJjTz8Q01gIzFogELLhpBQMYHX1VnNQ5GE/mZ6KSF8byQagF8z/nh3+aKoi1FvP7hoMRx9KqF3exapn/RCoJL7/Pj/JfirCPrQJDRLkoCCsXZfEHNlFh4M3PR/k6PCGFP0vUX5isbdlcfwj8ipLoyYiR5CN2ha+Cv9LWldrz+vnqv1lMX++34IgLavV4wPyMKvXncuinS9l04YEVb+RKKfrxW6KSJREa2lKpFlubCtGmZkUb0tCkqY5uRlQJg/apjMpRWeDnDpwTKgqnAl8s8s3R+6lHx5+QYLgaMS7G1jYgiiLFrVyhB9G30jj2kcYq7c5lw+C74F9qEEdbvf+RNW8JMrz6vF0IPJUpVJ9dpJ14shxMkGnVHqrKPvRsiBNwTfCnZ1tvBWSsXatz7JdLuP6l/dhx0WfZnB9iqqHiMxasQpBBIwFlXr+kG6TKtUekAal0vtReVUHebFTILRZuVcryOu9KDoiq9X+o8tVraK8WvKIF5njDHJbgwlBmhGliHw4iKLfJLXa/2FuN0vzxMgVcaV63bS+IRmnJtRrQVq2b8dV64PJ8tFC1W5Fkh5obGBt/Vm1X0TLlma5RLn4M2wc/CJ9i3yMESHLjMybTJpWi1mwetZsVESanfsVDJwzT+Y/BfysVrsd4WMNpN8qhjIF8zk/ilYCVlXnbAylWrtDcc8lxhew6ORqjJVM6c7Mo60mRZZKpT1FOK6FT4HROVT9eeEENJ2RJKKsKBw579/x02waPEv8IJbyQi+zJTs7BCmp5iloqcLo3yip2q22EDzA+n7pUEQOpTvqNvr5IpB3hWF4YBu1opuIMkiq1W+r8tdtimHUJYFMkEu8KFoaRdELc/a5iUwsXDGVy5Fi5ySpmeUzIH20bnmiIKLCNY2mNTOFB2pZrZ75wI4X+fHwoZrI2kvls7oy/aaZUYJMrQlD6fN7jR/2mCDsNX7Ya/ywbCIWGF/Ehlt3ivXsNo2D6jajrX21UFPFV8wZzJ9GWnlWTlz9G1X9BnmGTbvyamLg+lotPRwYdlyxXSI3lwXBQbkmoq0y0nIhSO3G1PfXNEiWU7Od6SOiS9eu9X+67BW/sqt2eonQeDWzU+aTTvrDhR2xnaNFi1WdLCL28Mvr4yT7mCR42tiETNEQY6zv3wfA8lmN+TJAFkXRH1jkmDYiOsytRlVewaN/Cn0DMPQS3Z+GNtqiNo2rK4OwtAciR7aINCgcIbIYw/9tOChcQ7HtB2Ppy2IuoX1iRyFccC3Dwy80mHY6J0ntxzCAXsSZZt9Ve/47fbynutFaT9RrtqwDH5HIeG2Xvw+6SReTxoGc8PuXyb2zbQTbWd30hjzq6ON5W05tVxG7AlrdCmRUfL/0kntvJ3Ni5B55MYv8MDspjbmQ+ZGJMipFJ3H1g35U+pHAwTSPoaw/i5Lji+0SPpD4Yam/g2LEhcalicF+eeI+7ogktR/D+egjHBjs95rB64MeeU+80aaeTP55BRtEYtKaPqKJfsEzajJBJvWzGtQzoqjGxOVBAF3b4r6Wks0yQdbDfhaocqpI05iq0ch8rHlbkgRPF874Wby3zAMvC8PKn6iYW2ju6S1az3I6cBHzp7hq3ca60ReOTlXvEWQ3mtteW3nDHeYvAiAJw/BYFc5vU/tgTIpU/XYSx48xISqkLUnWJcicINdfH/R4R8VDNhFpUXlFUfHBxPqM/6fPXjllllq2TaWe3I4RRSvAvLLFCVQvg/+9NBm5f2veYBzzb34Y3Scib6BpQV4ygf3CsPzeOK7cwPzJa7aAV61Wn/H98jF4eidQbkOUDtsZQXpRtFSR7zBWGUvaSJFDqeH8yYQJvxMJkt0O8fdb+GxOkJts2pIgG346UylrP36675Jl/kLv08mwzaBQz1XUMyqppRZK6aN3Pv7kS0vBygBWQViNqVtPly9HWYOwHLsVcrfrbWDPlNZhP6YY5sU0Nq3aSmoEwuUgl7QLTVL0bOAG5lfebgb4aVr5RWjKx6vozYx5ex0pbp+o78EkiqIjLbKm4fCU9lJkNkAtfmayfey3JcjLD/GThc9+N+jxjkraSZCT3fkAae1K2Y0e844gVTAyxt++EIwoaC1cNkCqa/EZwCZX7/7HgdGrjolVRZHkarJggfGya+zfw3PfVMUTmRVC8oDMi6JlgryR5vUZbUGkD2W12p3Fa1tLSksB0lLp2qBS+1uEnZqQQ15rUlgaBMEhSZL8ivmVx5sCfhxXbvGj6ExBLsJ1U9xeUdeSUj+KzrDI1xjLPDLtDltU703j+EKaFLc2nRJkvMluQXFTjRmxWVzTWjyiWTyiWVzRNBvWLMnYhGfshCOhl9DsG/rmD4PQ7Ot7Zj9Cs6+15MUy75xdaUGQc9qE/WghlV9O++ZLM43c1ZV3YFxV3GfW4pQUFa/bWs9OhSiDtFa7GPQLRQxl4jhju5Ic87zsvr5d/DD6tiAXM1bo2rTZRwJsEuyHGzQRbUuSozbI8w8MkoXPf7dBxfa3hHWKG/dE8qv+96QEI1hitXGqaZyoTTKNidWCzOYGMEAWhuF+Au9pU+3HA12fBsE1DSfS1kTRsC27vI3XbrT1LOXy7syP4PJJJcqkVvsLxV5N6xhKh+4nRsNYGmYGSBBFH/Hj5Bci5uSGvSht9k8GGFH5aBzHv6ZFixQzmQT5SP+BwQG5F3vLCXI6DODJWNC0brW+NnmOuMjpeUe5ppH5RT9tVjM09CLTa88wEzY5kyTJQ+hoIn7WZEwZSK+ft56dL8Hlky74tFY7BdUfdZCV4zD3ybBOiPW2FfV9Vs9P7wmC0glBFN0LcoXIuNoK7TTNNLdD8rk4rqyhdbfKMfJr9GIf8Jr113udeLE7X8aKFmmGOjoNqrmMudlilsz69BgvFLxim3uUBDZJOIsPJYMdFkN8UpvgcQ/Uotll23ghGfKCFpcoHNGCp01xxnwc+BLd1Xp2KkQpQJxE4bF+nPxEYP9tYApx2OzJaGNfqk778ug4jWkMge+X3ySePUZVViCyb6PQ0MGzLg5UCUAvTOPqBXQQ9eHn40BEUL0s92J7U/Fid0RBErHA+KHij8oxBQ15I7oD2fgcciu63o7Ye9OUDNSAZOGI+kbs0wCsm/EN7gGpHyUngOzcIng833SqP0qS5D6m1k97NqRJiePKv/th6SkR/qCJOl1vPbtnUCodm1Sr32F+tjnInWybNr1kwvBoFfMTYOd5amLoIplQEsZ67kxFAOiNominTGQvVF+L8mZEDhV0PzDk8cta1/Y6OQgLKVR8i34lq1U/QYeOTF8V4XxEVx/oJzYP82nlxVawaNtwkgxFpTCii8pjDGb/N6lqOhYChIpBskziSPwhAJbmNxx96LlfAYc2nfeZr0he9AXRDvKdBZTp9tOeaenJJ2/D+i2Qz7cuAaWK6lnAVczfMv4ZeV+gX/ul0rGi/LDBfuVCg7a+poMgXwuiaD3ta2bWF3UEskBUF1hksShh3pWiUbAcbZ/iTWFd5H4Q1f+TxdW/ZcwG2faefM5HOB9Nrl7/nWChd1Q82ELFVggjMYRi2pzpPr2C1NIdAMKTfncvcG/7Q2fshlU3X9SzFCOZh/2E4TsFObCFI6TeT/uZNKndzPT6ac+G9IRv+Ham+hfkcWHNwoEsyFv8UulP0mr1buZvWf96i9ofB6XSh1FZ1ZBx4Yhy6xsXXzOVaZeGzT62xtU2EK+h8zCvhsZobMJyepxUr54KQQL4MoCt7v/K46KF3vJ4Y2sJ0gvFJLH+Uqv2ZyLqNxNaFMlCVVXlMSjsnWDuBJZOfPNB6GSS4VZs+FXkHZpz2syZBTEi+m1gZI6orGPZJ1F0iyAfpHmsYC5lqp4D3D3P92bu8a5Wr/HD0qtE+AIuhnJbrtGp7GWZ8K+ZprmkEHbER+09qD0tSZKHp7Nv/UIdXoFtE5muWK8kxsbZDdGJz18wpdNkANvfD+cfNMn3r9imqp8HZEHQ+zokewfNa0bOZD/t2bL9XILyQVpWXEYFOTqKon0ai4rOZ6JM4+o/BmHpVYicCZoAgeOtra92b0WBp0gAEQ90WFX/IY1rX2CsN/uUBZv6yboTVg2KtosuUjELdC1++sKSo0wgb0krkmBGi1NaE6ifxfpUsNtz34KxPOyBAezA1EYrrG0grNksbCHZnxWT2sJhI75ivzcH+1pngKTV6o/9KLqvyBSazGRQbz0bWXQl8Bnmfx/mDPCSuHqWH5X2FDjaSZTzVlq1+XMVD9QqXGPU/k1RsKJO1tPS/PxGlbNjTllGmqziaLPYPyXcYMe2owV6DNm69EFZxuWqiK7GkxVkyaolx/gl7+RkJEu0+ITnQZJlnyn/6e+fqHvYG3a0MruFLnLPdG/vK0iz49uE/eQtO/M8beagbcsrFkC7fO6i1iQfhkV/B+sHmX/hQBMlCyVvUXt8EEZ3IvJmXGjQfHiutkHzM0Vb3apibyAzF6Zp5ecNe8NuiTAw/RPVyhAbbRqP2MaTOQsz8VRk/ej7dqn7peT17GCODRqzoQ3YTfaLwBP1zaq5yVZ19R6L49R+ygB+hImHsyujk194WPsxMjAj0k/eQS3JTkZkYYNxXyc5pRrztOeCw2YyiYm0VLs2qER/i8himif2p2B2DaKRDyY1Lm8g2E4Jp9sIte7xH0l87xg/ze4Rkb0aiHK2xtRqvrpxHrfVmpj4G3UbpTfalh4eVWuv80SvSvLsGRqe7Rbv1emTpFFDkYlTz8hRRWiWaggVhm0WV21apCNiBFHPjN+g/QgDaLVaW1zqi/4CAXoEKvwKeJiDZkSKqxNdBJxRzH8z76fkvG2/zpinLJ2Di9VnkPWEsgqk3rhMmkmTCmfTeevZxgyIbvQQ50fzyMhzEgTHIN6PgB0aNpPM8LjazVf+eh5o3a3YWmtCxitvCrAJ1QcRvUNFbkur1Z8BaTbD5LjlJDl1sS3vQAtGtSBRAcmaTLBFs5rNe8sag6rNZvZ2yMKw/P+p6N5AjRbVflD7+zQMVlGrwdwNm8klR/UuR7JTyR0UzVIrrSAHemH4ziyOb6VtONC4hlXt+kPPVdRb1D7gRWaFQVaTVy3PgEBm9OCTtM185VJs3gisW5F2uCam+6xiVIdV5CVRfq/oE8CjKvpgaMyjW7Pf+PRJUkWLoHKrdX1fsIXrZzN12Fr1PB8RIfALOhIDNpn8NNUoiK3yKIqYVI3nyeAMEwq+L3enaba/SPNq4qoqsecNF3nac5kILECSDD8URdFBqhq0G1cpCAaH45gW9ppcjS+HV4SVyr+LiG05T0n1mcZ7maMb22S12vfDcvmgLMt6RCRTtV4QBBuSmC09BPNkiMD7hziOL2szXyauxc81fq6LpHJCz/tkmqYDrcY4LVpRFRFJa74/zPBwBRiauOcqY6LlxHzuWcGWVPaJKIkJqxKOWSQxlASq2jOpup3oRlVNkjT/hGdA7Xh1u25v7Dn+2d9oP68bvdGBfKJmKNtGAUZGRp4Hnp+C2N8NdiSp1WpPdfLGOCfIVsSfvz44uCGGDcwPWMBUKpXfTnEuOl5XQ0ND64B1U/1cl2A6e2fqyLW2Rs2vMaG57rTZKmavgt7Ekpf7z5r5RaWuuklOYoo+RcU+nKQ2IR1Vn61XEV/QR0Y/V3iogyG+PiTJNVo1dsGCBgPZK59bDyCyufQxQw6aTuwqHZ+gXbKIzRTeqzM4T90yR5Olb86kA2I6xRy6DTNtx211cNhtubbqMmAPJfGCBK9Fw0WPkmCG1AcIvOe+IO/j71rOYmNIz8rnRsgzVaYyS9LwRGbTAznfYN08bVNCn6/ransbYwNJij5AxYZxDCJ4mw1dQJUkrFgjuQF1OjM6aSh4qwBx2U4egoODw9wWmad/lKzGq8dBjvvSZaOl0B0cHBy6nyTrFXeSq3d7qwSyOIszW7RcwBOsH3leLc6eiD70/GOcj0zXVliUZfM4aEadMA4ODg6zrG4Xam98tV7s95k3+MPemFk7AxYYWGcvEuEsXYunA6iAJlft/h6/hz3iEWsRJPSNxIkdDnd77trJemcXqrUrq+/g4NB9JAmgyDAVtXE8rqZiGlbUl7y4a44iKwaxn6PPPzREcpk0EBjUYR7Z5SZYNzRa8bz+7+olryLw3pRWM81UNOrTH8rRz43UUxHd43BwcJhrmODLVoPkMUki+QXkr8nmtkdVGWSTTeOKrSUjNmbIpqi+zA5mPOGdnxNukpgj6TU3+JG5MQq4ieF0ySjpOjg4OMx1SXIa8BB88pxtKQi2aXUVNRozYm1cVQuahr6x7hE4ODh0E0lqUVNSta7+ymhb180hRb8baag4Iy2cOvk3FT1yxBI4FdvBwaGbSFLxMAiK55mc9DJbvDaJui1KDyUxYYap2yQ1oW+zXxnIvdibsuoNfdXSPZoVEuTvl/wOXtgamTUODg4OM0CSQg2rNYQs06KroUiKVR8kGX1bQWq+yFnUdHESZwoQJJ4YpEbphWr+0SLUp5BKdz7p5Y3AxrEf/K17Ag4ODnOfJOtkFqZ2OZEfphn0FILjCBAGMFINhmAsFxtATvjdg1P5MQVpdNI4CdLBwWGuY8sybvoxkxXBdUHiDg4O85IkVRHunMQ7vQ5lOXYrtnl1cHBw6H5JcpRYG7/QEamDg8M8liRNfO0eB4bWBrEt7JQRUk29jeXjf/PfLjPGwcFhe8NoAy8RlJt26sXatURm5yCxWAUig8Tp7cA7WI1hgr3x5cv2Wbho57RneGSEXhvG8uFnX3LT6uDgMF8wWYndhFQ1sdhMSUlVxYyF/4xKnf05wfbuUP08Jnu8N4oeTwKug/HFch0cHBy6XpIcz35F4Hg93yb/uynpiVJC6CuCIXvdlDo4OMxvSVJI0YZ2kfnfzUN6lB56jdBrRGCBm1IHB4f5K0mGKoywMwuMHyZF9navQCXdcZLP2oJmL2E4u4MYrPJizrPOuePg4DA/MN67vZqwmiw5reSb3iSzioqaSLws1ieiE55dPergcXBwcNgeSXI6UMVwZ6G2r0Ndto2Dg8O8Jkntx2fphBcd+Tk4ODg4ODg4ODg4ODg4bIm6DUUweOGecY4aBwcHBwcHBweH9pJkvYBFfNVuVwYB+xMIScVeF57w3D/qajznvHFwcNje0Kxb4hsJzUEEAhV7HwCPuHxsBwcHR5J1mTIiFAgEIHDT5ODg4EhyHMwVDNk9rS+iRu4sXnT9aBwcHBwcHBwcHMbw/wPEej+R2NjiEQAAAABJRU5ErkJggg==';
+
+var TIPOS = DADOS.tipos, SECOES = DADOS.secoes;
+var INSTR = DADOS.instrumentos, PUBS = DADOS.publicacoes, BASES = DADOS.bases;
+var T = DADOS.totais;
+
+var ICONES = {
+  balao:'M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z',
+  pessoa:'M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z',
+  brilho:'M11.5 2C6.81 2 3 5.81 3 10.5S6.81 19 11.5 19h.5v3c4.86-2.34 8-7 8-11.5C20 5.81 16.19 2 11.5 2zm1 14.5h-2v-2h2v2zm0-4h-2c0-3.25 3-3 3-5 0-1.1-.9-2-2-2s-2 .9-2 2h-2c0-2.21 1.79-4 4-4s4 1.79 4 4c0 2.5-3 2.75-3 5z',
+  camadas:'M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z',
+  livro:'M18 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V4a2 2 0 00-2-2zM8 6h8v2H8V6zm0 4h8v2H8v-2zm0 4h5v2H8v-2z',
+  base:'M12 2C7.6 2 4 3.3 4 5v14c0 1.7 3.6 3 8 3s8-1.3 8-3V5c0-1.7-3.6-3-8-3zm6 17c0 .4-2.2 1.5-6 1.5S6 19.4 6 19v-2.6c1.5.9 3.8 1.3 6 1.3s4.5-.4 6-1.3V19zm0-5c0 .4-2.2 1.5-6 1.5S6 14.4 6 14v-2.6c1.5.9 3.8 1.3 6 1.3s4.5-.4 6-1.3V14zM12 8.5C8.2 8.5 6 7.4 6 7s2.2-1.5 6-1.5S18 6.6 18 7s-2.2 1.5-6 1.5z',
+  grade:'M3 3h8v8H3V3zm10 0h8v8h-8V3zM3 13h8v8H3v-8zm10 0h8v8h-8v-8z',
+  lista:'M3 13h2v-2H3v2zm0 4h2v-2H3v2zm0-8h2V7H3v2zm4 4h14v-2H7v2zm0 4h14v-2H7v2zM7 7v2h14V7H7z',
+  link:'M19 19H5V5h7V3H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7h-2v7zM14 3v2h3.59l-9.83 9.83 1.41 1.41L19 6.41V10h2V3h-7z',
+  processo:'M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm2 18H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z',
+  baixar:'M5 20h14v-2H5v2zM19 9h-4V3H9v6H5l7 7 7-7z'
+};
+
+/* ===========================================================
+   2. ESTADO
+   =========================================================== */
+
+var state = {
+  page:'painel',          /* painel | consulta | publicacoes | bases */
+  graficosTabela:false,
+  /* aba Consulta à Sociedade */
+  view:'cards', tipo:'todos', busca:'', anos:[], plataformas:[],
+  /* aba Publicações */
+  pubView:'cards', secao:'todas', pubBusca:'', pubAnos:[], pubCategorias:[]
+};
+
+/* ===========================================================
+   3. UTILITÁRIOS
+   =========================================================== */
+
+function esc(s){
+  return String(s == null ? '' : s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+function icone(nome, tam){
+  tam = tam || 14;
+  return '<svg width="'+tam+'" height="'+tam+'" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="'+ICONES[nome]+'"/></svg>';
+}
+function lupa(){
+  return '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" aria-hidden="true"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.35-4.35"/></svg>';
+}
+function num(n){ return (n == null ? '—' : Number(n).toLocaleString('pt-BR')); }
+function pct(n, total){ return total ? Math.round(n / total * 100) : 0; }
+function semAcento(s){
+  return String(s).toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+}
+function acha(lista, id){
+  for(var i=0;i<lista.length;i++){ if(lista[i].id === id) return lista[i]; }
+  return null;
+}
+
+/* nº SEI: vira link quando a planilha traz o hyperlink do processo */
+function linkSei(sei, url, classe){
+  if(!sei) return '';
+  if(!url) return esc(sei);
+  return '<a class="'+(classe || 'sei-link')+'" href="'+esc(url)+'" target="_blank" rel="noopener noreferrer" '+
+    'title="Abrir o processo '+esc(sei)+' no SEI">'+esc(sei)+'</a>';
+}
+function botaoSei(sei, url){
+  if(!sei || !url) return '';
+  return '<a class="doc sei" href="'+esc(url)+'" target="_blank" rel="noopener noreferrer">'+
+    icone('processo',12)+'Processo no SEI</a>';
+}
+function listaDocs(docs){
+  if(!docs.length) return '<span class="doc sem">Sem documento publicado</span>';
+  return docs.map(function(d){
+    if(d.url){
+      return '<a class="doc" href="'+esc(d.url)+'" target="_blank" rel="noopener noreferrer">'+
+        icone('link',12)+esc(d.cat)+'</a>';
+    }
+    return '<span class="doc sem" title="'+esc(d.ref || 'Sem URL na planilha')+'">'+esc(d.cat)+' (sem link)</span>';
+  }).join('');
+}
+function participacao(i){
+  if(i.contribuicoes != null) return {n:i.contribuicoes, u:'contribuições recebidas'};
+  if(i.contribuintes != null) return {n:i.contribuintes, u:'contribuintes'};
+  if(i.espectadores != null || i.oral != null){
+    return {n:i.espectadores, u:'espectadores' + (i.oral != null ? ' · ' + i.oral + ' participações orais' : '')};
+  }
+  return null;
+}
+
+/* ---------- filtros ---------- */
+
+function passaInstr(i, ignorarTipo){
+  if(!ignorarTipo && state.tipo !== 'todos' && i.tipo !== state.tipo) return false;
+  if(state.anos.length && state.anos.indexOf(i.ano) === -1) return false;
+  if(state.plataformas.length && state.plataformas.indexOf(i.plataforma) === -1) return false;
+  if(state.busca){
+    var q = semAcento(state.busca);
+    if(semAcento([i.nome,i.ementa,i.sei,i.plataforma,i.parceria,i.periodo].join(' ')).indexOf(q) === -1) return false;
+  }
+  return true;
+}
+function passaPub(p, ignorarSecao){
+  if(!ignorarSecao && state.secao !== 'todas' && p.secao !== state.secao) return false;
+  if(state.pubAnos.length && state.pubAnos.indexOf(p.anoNum) === -1) return false;
+  if(state.pubCategorias.length && state.pubCategorias.indexOf(p.categoria) === -1) return false;
+  if(state.pubBusca){
+    var q = semAcento(state.pubBusca);
+    if(semAcento([p.titulo,p.ementa,p.sei,p.categoria,p.vigencia,p.parceria].join(' ')).indexOf(q) === -1) return false;
+  }
+  return true;
+}
+
+/* ===========================================================
+   4. ESTRUTURA COMUM
+   =========================================================== */
+
+function topBar(){
+  return '<div class="topbar">'+
+    '<div class="esq">'+
+      '<a class="govbr" href="https://www.gov.br/">gov<i>.br</i></a>'+
+      '<span class="orgao">Ministério da Justiça e Segurança Pública</span>'+
+    '</div>'+
+    '<div class="dir">'+
+      '<a href="https://www.gov.br/acessoainformacao/pt-br">Acesso à Informação</a>'+
+      '<a href="https://www.gov.br/governodigital/pt-br/acessibilidade-digital">Acessibilidade</a>'+
+      '<a href="https://www.gov.br/participamaisbrasil/pagina-inicial">Participe</a>'+
+      '<a class="btn-pill out" href="https://www.gov.br/pt-br/servicos">Atalhos gov.br</a>'+
+      '<a class="btn-pill fill" href="https://sso.acesso.gov.br/">Entrar com gov.br</a>'+
+    '</div></div>';
+}
+
+function cabecalho(){
+  return '<div class="header">'+
+    '<a class="id" href="https://www.gov.br/anpd/pt-br">'+
+      '<img src="'+LOGO_ANPD+'" width="110" height="44" alt="ANPD – Autoridade Nacional de Proteção de Dados">'+
+      '<span class="nome">Agência Nacional de Proteção de Dados</span></a>'+
+    '<nav>'+
+      '<a href="https://www.gov.br/anpd/pt-br/composicao">A ANPD</a>'+
+      '<a href="https://www.gov.br/anpd/pt-br/assuntos/regulacao">Regulação</a>'+
+      '<a href="https://www.gov.br/anpd/pt-br/assuntos/fiscalizacao">Fiscalização</a>'+
+      '<a class="ativo" href="#">Dados Abertos</a>'+
+      '<a href="https://www.gov.br/anpd/pt-br/centrais-de-conteudo">Publicações</a>'+
+    '</nav></div>';
+}
+
+function subNav(){
+  var abas = [
+    {id:'painel', label:'Painel do Inventário'},
+    {id:'consulta', label:'Consulta à Sociedade'},
+    {id:'publicacoes', label:'Publicações'},
+    {id:'bases', label:'Bases de Dados'}
+  ];
+  return '<div class="subnav">'+abas.map(function(a){
+    return '<button type="button" data-nav="'+a.id+'"'+
+      (state.page === a.id ? ' aria-current="page"' : '')+'>'+esc(a.label)+'</button>';
+  }).join('')+'</div>';
+}
+
+function trilha(ultimo){
+  return '<nav class="breadcrumb" aria-label="Trilha de navegação">'+
+    '<a href="https://www.gov.br/anpd/pt-br">Início</a><span class="sep">›</span>'+
+    '<a href="https://www.gov.br/anpd/pt-br/acesso-a-informacao">Acesso à Informação</a>'+
+    '<span class="sep">›</span><span class="atual">'+esc(ultimo)+'</span></nav>';
+}
+
+function rodape(){
+  return '<footer class="rodape">'+
+    '<div class="marca-rod">'+
+      '<img src="'+LOGO_ANPD+'" width="95" height="38" alt="ANPD – Autoridade Nacional de Proteção de Dados">'+
+      '<span>Agência Nacional de Proteção de Dados</span>'+
+    '</div>'+
+    '<p>Fonte: Inventário de Dados da Superintendência de Regulação — Plano de Dados Abertos. '+esc(DADOS.atualizacao)+'.</p>'+
+    '<p>Os números de processo abrem o SEI da ANPD; os demais links remetem às páginas originais dos documentos.</p>'+
+    '<p>Contribuições, contribuintes e espectadores são registros distintos, coletados em plataformas distintas, e não se somam entre si.</p>'+
+  '</footer>';
+}
+
+/* ===========================================================
+   5. GRÁFICOS
+   =========================================================== */
+
+function grafBarras(titulo, legenda, itens, total, opcoes){
+  opcoes = opcoes || {};
+  var corPadrao = opcoes.cor || '#1351B4';
+  var max = itens.reduce(function(m,i){ return Math.max(m, i.n); }, 0) || 1;
+  var corpo;
+  if(state.graficosTabela){
+    corpo = '<table class="tab-grafico"><thead><tr><th>'+esc(opcoes.colunaRotulo || 'Item')+'</th>'+
+      '<th class="n">'+esc(opcoes.colunaValor || 'Total')+'</th><th class="n">%</th></tr></thead><tbody>'+
+      itens.map(function(i){
+        return '<tr><td><span class="pt" style="background:'+(i.cor || corPadrao)+'"></span>'+esc(i.k)+'</td>'+
+          '<td class="n">'+num(i.n)+'</td><td class="n">'+pct(i.n,total)+'%</td></tr>';
+      }).join('')+'</tbody></table>';
+  }else{
+    corpo = '<div class="barras">'+itens.map(function(i){
+      return '<div class="linha-b"><span class="rot">'+esc(i.k)+'</span>'+
+        '<span class="trilho"><span class="barra" style="width:'+(i.n/max*100)+'%;background:'+(i.cor || corPadrao)+'"></span></span>'+
+        '<span class="val">'+num(i.n)+'<i>'+pct(i.n,total)+'%</i></span></div>';
+    }).join('')+'</div>';
+  }
+  return '<figure class="grafico'+(opcoes.largo ? ' largo' : '')+'"><figcaption><h3>'+esc(titulo)+'</h3>'+
+    (legenda ? '<p class="leg">'+esc(legenda)+'</p>' : '')+'</figcaption>'+corpo+'</figure>';
+}
+
+/* colunas empilhadas por categoria, com eixo de tempo contínuo */
+function grafPorAno(titulo, legendaTxt, anos, series, contar){
+  var matriz = anos.map(function(a){
+    var linha = {ano:a, total:0, partes:[]};
+    series.forEach(function(s){
+      var n = contar(a, s.id);
+      linha.partes.push({s:s, n:n});
+      linha.total += n;
+    });
+    return linha;
+  });
+  var max = matriz.reduce(function(m,l){ return Math.max(m, l.total); }, 0) || 1;
+  var legenda = '<ul class="legenda">'+series.map(function(s){
+    return '<li><span class="sw" style="background:'+s.cor+'"></span>'+esc(s.label)+'</li>';
+  }).join('')+'</ul>';
+
+  var corpo;
+  if(state.graficosTabela){
+    corpo = '<table class="tab-grafico"><thead><tr><th>Ano</th>'+
+      series.map(function(s){ return '<th class="n">'+esc(s.label)+'</th>'; }).join('')+
+      '<th class="n">Total</th></tr></thead><tbody>'+
+      matriz.map(function(l){
+        return '<tr><td>'+esc(l.ano)+'</td>'+
+          l.partes.map(function(p){ return '<td class="n">'+p.n+'</td>'; }).join('')+
+          '<td class="n">'+l.total+'</td></tr>';
+      }).join('')+'</tbody></table>';
+  }else{
+    corpo = '<div class="colunas">'+matriz.map(function(l){
+      var segs = l.partes.filter(function(p){ return p.n > 0; }).map(function(p){
+        return '<span style="flex:'+p.n+';background:'+p.s.cor+'"></span>';
+      }).join('');
+      return '<div class="coluna"><span class="cap">'+(l.total || '')+'</span>'+
+        '<span class="pilha" style="height:'+(l.total/max*100)+'%">'+segs+'</span>'+
+        '<span class="ano">'+esc(l.ano)+'</span></div>';
+    }).join('')+'</div>';
+  }
+  return '<figure class="grafico largo"><figcaption><h3>'+esc(titulo)+'</h3>'+
+    '<p class="leg">'+esc(legendaTxt)+'</p></figcaption>'+legenda+corpo+'</figure>';
+}
+
+function tabelaAudiencias(){
+  var aps = INSTR.filter(function(i){ return i.tipo === 'ap'; });
+  var linhas = aps.map(function(i){
+    var reg = (i.espectadores != null || i.oral != null);
+    return '<tr><td><strong>'+esc(i.nome)+'</strong><br>'+
+      '<span style="color:#6B7280;font-size:12px">'+esc(i.ementa)+'</span></td>'+
+      '<td class="n">'+(reg ? num(i.oral) : '<span style="color:#9CA3AF">sem registro</span>')+'</td>'+
+      '<td class="n">'+(reg ? num(i.espectadores) : '<span style="color:#9CA3AF">sem registro</span>')+'</td></tr>';
+  }).join('');
+  return '<figure class="grafico largo"><figcaption><h3>Audiências públicas: participação</h3>'+
+    '<p class="leg">Participações orais e espectadores registrados nas transmissões — duas grandezas diferentes, '+
+    'apresentadas lado a lado em vez de num mesmo eixo. '+T.apComRegistro+' das '+aps.length+
+    ' audiências têm esse registro na planilha.</p></figcaption>'+
+    '<table class="tab-grafico"><thead><tr><th>Audiência</th><th class="n">Participação oral</th>'+
+    '<th class="n">Espectadores</th></tr></thead><tbody>'+linhas+'</tbody></table></figure>';
+}
+
+/* ===========================================================
+   6. PAINEL
+   =========================================================== */
+
+function paginaPainel(){
+  var tiles = '<div class="tiles">'+
+    '<div class="tile hero"><p class="rot">Bases de dados</p><p class="num">'+T.bases+'</p>'+
+      '<p class="sub">conjuntos declarados no Plano de Dados Abertos da SRE</p></div>'+
+    '<div class="tile"><p class="rot">Instrumentos de participação</p><p class="num">'+T.instrumentos+'</p>'+
+      '<p class="sub">consultas, audiências e tomadas de subsídios</p></div>'+
+    '<div class="tile"><p class="rot">Publicações</p><p class="num">'+T.publicacoes+'</p>'+
+      '<p class="sub">regulamentos, guias, agenda regulatória e outras</p></div>'+
+    '<div class="tile"><p class="rot">Contribuições</p><p class="num">'+num(T.contribuicoes)+'</p>'+
+      '<p class="sub">em '+T.cpComContrib+' consultas públicas</p></div>'+
+    '<div class="tile"><p class="rot">Contribuintes</p><p class="num">'+num(T.contribuintes)+'</p>'+
+      '<p class="sub">em '+T.tsComContribuintes+' tomadas de subsídios</p></div>'+
+    '<div class="tile"><p class="rot">Espectadores</p><p class="num">'+num(T.espectadores)+'</p>'+
+      '<p class="sub">e '+num(T.oral)+' participações orais em '+T.apComRegistro+' audiências</p></div>'+
+    '<div class="tile"><p class="rot">Links diretos</p><p class="num">'+num(T.links)+'</p>'+
+      '<p class="sub">'+num(T.linksSei)+' abrem o processo no SEI; os demais, o documento</p></div>'+
+  '</div>';
+
+  /* --- participação --- */
+  var porTipo = TIPOS.map(function(t){
+    return {k:t.label, n:INSTR.filter(function(i){ return i.tipo === t.id; }).length, cor:t.cor};
+  });
+  var contribCP = INSTR.filter(function(i){ return i.contribuicoes != null; })
+    .map(function(i){ return {k:i.nome, n:i.contribuicoes}; }).sort(function(a,b){ return b.n-a.n; });
+  var contribTS = INSTR.filter(function(i){ return i.contribuintes != null; })
+    .map(function(i){ return {k:i.nome, n:i.contribuintes}; }).sort(function(a,b){ return b.n-a.n; });
+  var plats = {};
+  INSTR.forEach(function(i){ var k = i.plataforma || 'Não informada'; plats[k] = (plats[k]||0)+1; });
+  var porPlataforma = Object.keys(plats).map(function(k){ return {k:k, n:plats[k]}; })
+    .sort(function(a,b){ return b.n-a.n; });
+
+  /* --- publicações --- */
+  var porSecao = SECOES.map(function(s){
+    return {k:s.label, n:PUBS.filter(function(p){ return p.secao === s.id; }).length, cor:s.cor};
+  });
+  var cats = {};
+  PUBS.forEach(function(p){ var k = p.categoria || 'Não informada'; cats[k] = (cats[k]||0)+1; });
+  var porCategoria = Object.keys(cats).map(function(k){ return {k:k, n:cats[k]}; })
+    .sort(function(a,b){ return b.n-a.n; });
+  var instrs = {};
+  PUBS.forEach(function(p){ p.docs.forEach(function(d){ instrs[d.cat] = (instrs[d.cat]||0)+1; }); });
+  var porInstrumento = Object.keys(instrs).map(function(k){ return {k:k, n:instrs[k]}; })
+    .sort(function(a,b){ return b.n-a.n; });
+
+  var anosTodos = DADOS.anosInstr.concat(DADOS.anosPub)
+    .filter(function(v,i,a){ return a.indexOf(v) === i; }).sort();
+  var faixa = [];
+  if(anosTodos.length){
+    for(var y = parseInt(anosTodos[0],10); y <= parseInt(anosTodos[anosTodos.length-1],10); y++){
+      faixa.push(String(y));
+    }
+  }
+
+  var g1 = '<div class="graficos">'+
+    grafPorAno('Instrumentos de participação por ano',
+      'Quantos processos de escuta a ANPD abriu em cada ano, por tipo. O ano corrente ainda está em curso.',
+      faixa, TIPOS, function(a, id){
+        return INSTR.filter(function(i){ return i.ano === a && i.tipo === id; }).length;
+      })+
+    grafBarras('Instrumentos por tipo', 'Como os '+T.instrumentos+' processos se dividem.',
+      porTipo, T.instrumentos, {colunaRotulo:'Tipo'})+
+    grafBarras('Plataforma de participação', 'Onde a sociedade enviou suas contribuições.',
+      porPlataforma, T.instrumentos, {colunaRotulo:'Plataforma'})+
+    grafBarras('Contribuições por consulta pública',
+      'Contribuições recebidas em cada consulta pública, da maior para a menor.',
+      contribCP, T.contribuicoes, {largo:true, colunaRotulo:'Consulta pública', colunaValor:'Contribuições'})+
+    grafBarras('Contribuintes por tomada de subsídios',
+      'Grandeza diferente da anterior: aqui conta-se quem contribuiu, não quantas contribuições chegaram.',
+      contribTS, T.contribuintes, {largo:true, cor:'#E5007D', colunaRotulo:'Tomada de subsídios', colunaValor:'Contribuintes'})+
+    tabelaAudiencias()+
+  '</div>';
+
+  var g2 = '<div class="graficos">'+
+    grafPorAno('Publicações por ano',
+      'Ano de publicação ou de revisão de cada peça, por seção do inventário.',
+      faixa, SECOES, function(a, id){
+        return PUBS.filter(function(p){ return p.anoNum === a && p.secao === id; }).length;
+      })+
+    grafBarras('Publicações por seção', 'Divisão das '+T.publicacoes+' peças publicadas.',
+      porSecao, T.publicacoes, {colunaRotulo:'Seção'})+
+    grafBarras('Categoria temática', 'Assunto declarado de cada publicação.',
+      porCategoria, T.publicacoes, {colunaRotulo:'Categoria'})+
+    grafBarras('Instrumentos publicados', 'Tipo de peça disponibilizada em cada publicação.',
+      porInstrumento, T.docsPub, {largo:true, colunaRotulo:'Instrumento', colunaValor:'Documentos'})+
+  '</div>';
+
+  return '<div class="painel-head"><h1>Painel do Inventário de Dados</h1>'+
+      '<p>Visão consolidada do Plano de Dados Abertos da Superintendência de Regulação: as bases de dados '+
+      'declaradas, os processos pelos quais a ANPD ouve a sociedade antes de regulamentar e as peças que publica '+
+      'ao final. Cada registro leva ao processo no SEI e ao documento na origem — as abas ao lado trazem a lista '+
+      'completa.</p></div>'+
+    tiles+
+    '<div class="painel-ctrl"><label><input type="checkbox" data-graf-tabela'+
+      (state.graficosTabela ? ' checked' : '')+'>Ver gráficos como tabela</label></div>'+
+    '<p class="secao-titulo">Consulta à sociedade</p>'+g1+
+    '<p class="secao-titulo">Publicações</p>'+g2;
+}
+
+/* ===========================================================
+   7. ABA CONSULTA À SOCIEDADE
+   =========================================================== */
+
+function chips(rot, valores, chave){
+  return '<div class="grupo"><span class="rot">'+esc(rot)+':</span>'+valores.map(function(v){
+    var ativo = state[chave].indexOf(v) !== -1;
+    return '<button type="button" class="chip" data-toggle="'+chave+'" data-valor="'+esc(v)+'" aria-pressed="'+ativo+'">'+esc(v)+'</button>';
+  }).join('')+'</div>';
+}
+
+function paginaConsulta(){
+  var lista = INSTR.filter(function(i){ return passaInstr(i); });
+  var abas = [{id:'todos', label:'Todos os instrumentos', icone:'camadas'}].concat(
+    TIPOS.map(function(t){ return {id:t.id, label:t.label, icone:t.icone}; }));
+
+  var tabs = '<div class="tipotabs"><div class="trilho" role="tablist" aria-label="Tipo de instrumento">'+
+    abas.map(function(a){
+      var n = INSTR.filter(function(i){
+        return (a.id === 'todos' || i.tipo === a.id) && passaInstr(i, true);
+      }).length;
+      return '<button type="button" role="tab" data-tipo="'+a.id+'" aria-selected="'+(state.tipo === a.id)+'">'+
+        '<span class="ico">'+icone(a.icone,14)+'</span>'+esc(a.label)+'<span class="cont">'+n+'</span></button>';
+    }).join('')+'</div></div>';
+
+  var algum = state.busca || state.anos.length || state.plataformas.length;
+  var filtros = '<div class="filtros">'+
+    '<label class="busca"><span class="lupa">'+lupa()+'</span>'+
+      '<input id="busca-instr" type="search" placeholder="Buscar por tema, instrumento ou SEI..." '+
+      'aria-label="Buscar instrumento" value="'+esc(state.busca)+'"></label>'+
+    chips('Ano', DADOS.anosInstr, 'anos')+
+    chips('Plataforma', DADOS.plataformas, 'plataformas')+
+    (algum ? '<button type="button" class="limpar" data-limpar="instr">Limpar filtros</button>' : '')+
+  '</div>';
+
+  var cabeca = '<div class="page-head">'+
+    '<div><h1>Consulta à Sociedade</h1>'+
+    '<p>Consultas públicas, audiências públicas e tomadas de subsídios abertas pela ANPD, com o objeto de cada uma, '+
+    'o prazo, a plataforma, o registro de participação, o processo no SEI e os documentos publicados ao final.</p></div>'+
+    '<div class="viewtoggle" role="group" aria-label="Modo de visualização">'+
+      '<button type="button" data-view="cards" aria-pressed="'+(state.view === 'cards')+'" title="Cards" aria-label="Visualização em cards">'+icone('grade',18)+'</button>'+
+      '<button type="button" data-view="tabela" aria-pressed="'+(state.view === 'tabela')+'" title="Tabela" aria-label="Visualização em tabela">'+icone('lista',18)+'</button>'+
+    '</div></div>';
+
+  var resumo = '<div class="resumo"><p>'+
+    (lista.length === INSTR.length
+      ? '<strong>'+INSTR.length+'</strong> instrumentos de participação'
+      : '<strong>'+lista.length+'</strong> de '+INSTR.length+' instrumentos')+
+    '</p><div class="dir"><button type="button" class="btn-csv" data-csv="instr">'+icone('baixar',13)+
+    'Baixar CSV</button><span class="data">'+esc(DADOS.atualizacao)+'</span></div></div>';
+
+  var corpo;
+  if(!lista.length){
+    corpo = '<p class="vazio-lista">Nenhum instrumento encontrado com os filtros selecionados.</p>';
+  }else if(state.view === 'cards'){
+    corpo = '<div class="grade">'+lista.map(function(i){
+      var t = acha(TIPOS, i.tipo) || {singular:'', cor:'#6B7280', icone:'balao'};
+      var p = participacao(i);
+      return '<article class="card" style="border-top-color:'+t.cor+'">'+
+        '<div class="tipo" style="color:'+t.cor+'">'+icone(t.icone,13)+esc(t.singular)+'</div>'+
+        '<h3>'+esc(i.nome)+'</h3>'+
+        '<p class="ementa">'+esc(i.ementa)+'</p>'+
+        '<dl>'+
+          (i.periodo ? '<dt>Período</dt><dd>'+esc(i.periodo)+'</dd>' : '')+
+          (i.plataforma ? '<dt>Plataforma</dt><dd>'+esc(i.plataforma)+'</dd>' : '')+
+          (i.parceria ? '<dt>Parceria</dt><dd>'+esc(i.parceria)+'</dd>' : '')+
+          (i.sei ? '<dt>Processo</dt><dd>'+linkSei(i.sei, i.seiUrl)+'</dd>' : '')+
+        '</dl>'+
+        (p ? '<div class="numero"><span class="n">'+num(p.n)+'</span><span class="u">'+esc(p.u)+'</span></div>'
+           : '<div class="numero vazio"><span class="n">Sem registro de participação na planilha</span></div>')+
+        '<div class="docs">'+botaoSei(i.sei, i.seiUrl)+listaDocs(i.docs)+'</div>'+
+      '</article>';
+    }).join('')+'</div>';
+  }else{
+    corpo = '<div class="tabela-wrap"><table class="catalogo"><thead><tr>'+
+      '<th style="width:34%">Instrumento</th><th style="width:14%">Período</th>'+
+      '<th style="width:13%">Plataforma</th><th style="width:13%">Participação</th>'+
+      '<th style="width:12%">Processo</th><th>Documentos</th></tr></thead><tbody>'+
+      lista.map(function(i){
+        var t = acha(TIPOS, i.tipo) || {singular:'', cor:'#6B7280'};
+        var p = participacao(i);
+        return '<tr>'+
+          '<td><span class="badge" style="background:'+t.cor+'18;color:'+t.cor+'">'+esc(t.singular)+'</span>'+
+            '<p class="t1" style="margin-top:6px">'+esc(i.nome)+'</p><p class="t2">'+esc(i.ementa)+'</p></td>'+
+          '<td>'+esc(i.periodo || '—')+'</td>'+
+          '<td>'+esc(i.plataforma || '—')+(i.parceria ? '<p class="t2">com '+esc(i.parceria)+'</p>' : '')+'</td>'+
+          '<td>'+(p ? '<strong>'+num(p.n)+'</strong><p class="t2">'+esc(p.u)+'</p>'
+                    : '<span style="color:#9CA3AF">sem registro</span>')+'</td>'+
+          '<td>'+(i.sei ? linkSei(i.sei, i.seiUrl) : '—')+'</td>'+
+          '<td><div class="docs" style="margin:0">'+listaDocs(i.docs)+'</div></td>'+
+        '</tr>';
+      }).join('')+'</tbody></table></div>';
+  }
+
+  return cabeca + tabs + filtros + resumo + corpo;
+}
+
+/* ===========================================================
+   8. ABA PUBLICAÇÕES
+   =========================================================== */
+
+function paginaPublicacoes(){
+  var lista = PUBS.filter(function(p){ return passaPub(p); });
+  var abas = [{id:'todas', label:'Todas as publicações', cor:'#1351B4'}].concat(SECOES);
+
+  var tabs = '<div class="tipotabs"><div class="trilho" role="tablist" aria-label="Seção do inventário">'+
+    abas.map(function(a){
+      var n = PUBS.filter(function(p){
+        return (a.id === 'todas' || p.secao === a.id) && passaPub(p, true);
+      }).length;
+      return '<button type="button" role="tab" data-secao="'+a.id+'" aria-selected="'+(state.secao === a.id)+'">'+
+        '<span class="ico">'+icone(a.id === 'todas' ? 'camadas' : 'livro',14)+'</span>'+esc(a.label)+
+        '<span class="cont">'+n+'</span></button>';
+    }).join('')+'</div></div>';
+
+  var algum = state.pubBusca || state.pubAnos.length || state.pubCategorias.length;
+  var filtros = '<div class="filtros">'+
+    '<label class="busca"><span class="lupa">'+lupa()+'</span>'+
+      '<input id="busca-pub" type="search" placeholder="Buscar por título, ementa ou SEI..." '+
+      'aria-label="Buscar publicação" value="'+esc(state.pubBusca)+'"></label>'+
+    chips('Ano', DADOS.anosPub, 'pubAnos')+
+    chips('Categoria', DADOS.categorias, 'pubCategorias')+
+    (algum ? '<button type="button" class="limpar" data-limpar="pub">Limpar filtros</button>' : '')+
+  '</div>';
+
+  var cabeca = '<div class="page-head">'+
+    '<div><h1>Publicações</h1>'+
+    '<p>Regulamentos, guias orientativos, agenda regulatória e demais peças publicadas pela Superintendência de '+
+    'Regulação, com a ementa, a situação de vigência, o processo no SEI e o texto na origem.</p></div>'+
+    '<div class="viewtoggle" role="group" aria-label="Modo de visualização">'+
+      '<button type="button" data-pubview="cards" aria-pressed="'+(state.pubView === 'cards')+'" title="Cards" aria-label="Visualização em cards">'+icone('grade',18)+'</button>'+
+      '<button type="button" data-pubview="tabela" aria-pressed="'+(state.pubView === 'tabela')+'" title="Tabela" aria-label="Visualização em tabela">'+icone('lista',18)+'</button>'+
+    '</div></div>';
+
+  var resumo = '<div class="resumo"><p>'+
+    (lista.length === PUBS.length
+      ? '<strong>'+PUBS.length+'</strong> publicações'
+      : '<strong>'+lista.length+'</strong> de '+PUBS.length+' publicações')+
+    '</p><div class="dir"><button type="button" class="btn-csv" data-csv="pub">'+icone('baixar',13)+
+    'Baixar CSV</button><span class="data">'+esc(DADOS.atualizacao)+'</span></div></div>';
+
+  var corpo;
+  if(!lista.length){
+    corpo = '<p class="vazio-lista">Nenhuma publicação encontrada com os filtros selecionados.</p>';
+  }else if(state.pubView === 'cards'){
+    corpo = '<div class="grade">'+lista.map(function(p){
+      var s = acha(SECOES, p.secao) || {label:'', cor:'#6B7280'};
+      return '<article class="card" style="border-top-color:'+s.cor+'">'+
+        '<div class="tipo" style="color:'+s.cor+'">'+icone('livro',13)+esc(s.label)+'</div>'+
+        '<h3>'+esc(p.titulo)+'</h3>'+
+        '<p class="ementa">'+esc(p.ementa)+'</p>'+
+        '<dl>'+
+          (p.categoria ? '<dt>Categoria</dt><dd>'+esc(p.categoria)+'</dd>' : '')+
+          (p.ano ? '<dt>Ano</dt><dd>'+esc(p.ano)+'</dd>' : '')+
+          (p.vigencia ? '<dt>Vigência</dt><dd>'+esc(p.vigencia)+'</dd>' : '')+
+          (p.parceria ? '<dt>Coordenação-Geral / Parceria</dt><dd>'+esc(p.parceria)+'</dd>' : '')+
+          (p.sei ? '<dt>Processo</dt><dd>'+linkSei(p.sei, p.seiUrl)+'</dd>' : '')+
+        '</dl>'+
+        '<div class="docs">'+botaoSei(p.sei, p.seiUrl)+listaDocs(p.docs)+'</div>'+
+      '</article>';
+    }).join('')+'</div>';
+  }else{
+    corpo = '<div class="tabela-wrap"><table class="catalogo"><thead><tr>'+
+      '<th style="width:34%">Publicação</th><th style="width:14%">Categoria</th>'+
+      '<th style="width:8%">Ano</th><th style="width:18%">Vigência</th>'+
+      '<th style="width:12%">Processo</th><th>Documentos</th></tr></thead><tbody>'+
+      lista.map(function(p){
+        var s = acha(SECOES, p.secao) || {label:'', cor:'#6B7280'};
+        return '<tr>'+
+          '<td><span class="badge" style="background:'+s.cor+'18;color:'+s.cor+'">'+esc(s.label)+'</span>'+
+            '<p class="t1" style="margin-top:6px">'+esc(p.titulo)+'</p><p class="t2">'+esc(p.ementa)+'</p></td>'+
+          '<td>'+esc(p.categoria || '—')+'</td>'+
+          '<td>'+esc(p.ano || '—')+'</td>'+
+          '<td>'+esc(p.vigencia || '—')+'</td>'+
+          '<td>'+(p.sei ? linkSei(p.sei, p.seiUrl) : '—')+'</td>'+
+          '<td><div class="docs" style="margin:0">'+listaDocs(p.docs)+'</div></td>'+
+        '</tr>';
+      }).join('')+'</tbody></table></div>';
+  }
+
+  return cabeca + tabs + filtros + resumo + corpo;
+}
+
+/* ===========================================================
+   9. ABA BASES DE DADOS
+   =========================================================== */
+
+function paginaBases(){
+  var cards = BASES.map(function(b){
+    var attrs = b.atributos.map(function(a){
+      var v = semAcento(a.v);
+      var cls = v === 'sim' ? ' class="sim"' : (v === 'nao' ? ' class="nao"' : '');
+      return '<div><dt>'+esc(a.k)+'</dt><dd'+cls+'>'+esc(a.v)+'</dd></div>';
+    }).join('');
+    return '<article class="base">'+
+      '<h3>'+esc(b.descricao)+'</h3>'+
+      '<dl class="atributos">'+attrs+'</dl>'+
+      '<div class="docs">'+(b.link
+        ? '<a class="doc" href="'+esc(b.link)+'" target="_blank" rel="noopener noreferrer">'+
+          icone('link',12)+'Acessar a base publicada</a>'
+        : '<span class="doc sem">Sem link na planilha</span>')+'</div>'+
+    '</article>';
+  }).join('');
+
+  return '<div class="page-head"><div><h1>Bases de Dados</h1>'+
+    '<p>Conjuntos de dados declarados no Plano de Dados Abertos da Superintendência de Regulação, com a situação '+
+    'de abertura, a periodicidade de atualização e o endereço onde cada base está publicada.</p></div></div>'+
+    '<div class="resumo"><p><strong>'+BASES.length+'</strong> bases no inventário</p>'+
+    '<div class="dir"><span class="data">'+esc(DADOS.atualizacao)+'</span></div></div>'+
+    '<div class="bases">'+cards+'</div>';
+}
+
+/* ===========================================================
+   10. EXPORTAÇÃO
+   =========================================================== */
+
+function baixaCSV(nome, cab, linhas){
+  var csv = [cab].concat(linhas).map(function(l){
+    return l.map(function(v){ return '"'+String(v == null ? '' : v).replace(/"/g,'""')+'"'; }).join(';');
+  }).join('\r\n');
+  var blob = new Blob(['﻿'+csv], {type:'text/csv;charset=utf-8;'});
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = nome;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 0);
+}
+
+function csvInstrumentos(){
+  var lista = INSTR.filter(function(i){ return passaInstr(i); });
+  baixaCSV('anpd-consulta-a-sociedade.csv',
+    ['Tipo','Instrumento','Ementa','Nº SEI','Link do processo no SEI','Período','Ano','Plataforma',
+     'Parceria','Contribuições','Contribuintes','Participação oral','Espectadores','Documentos'],
+    lista.map(function(i){
+      var t = acha(TIPOS, i.tipo) || {singular:''};
+      return [t.singular, i.nome, i.ementa, i.sei, i.seiUrl, i.periodo, i.ano, i.plataforma, i.parceria,
+              i.contribuicoes == null ? '' : i.contribuicoes,
+              i.contribuintes == null ? '' : i.contribuintes,
+              i.oral == null ? '' : i.oral,
+              i.espectadores == null ? '' : i.espectadores,
+              i.docs.map(function(d){ return d.cat+': '+(d.url || d.ref || 'sem link'); }).join(' | ')];
+    }));
+}
+
+function csvPublicacoes(){
+  var lista = PUBS.filter(function(p){ return passaPub(p); });
+  baixaCSV('anpd-publicacoes.csv',
+    ['Seção','Título','Categoria temática','Nº SEI','Link do processo no SEI','Ano','Vigência',
+     'Ementa','Coordenação-Geral / Parceria','Documentos'],
+    lista.map(function(p){
+      var s = acha(SECOES, p.secao) || {label:''};
+      return [s.label, p.titulo, p.categoria, p.sei, p.seiUrl, p.ano, p.vigencia, p.ementa, p.parceria,
+              p.docs.map(function(d){ return d.cat+': '+(d.url || d.ref || 'sem link'); }).join(' | ')];
+    }));
+}
+
+/* ===========================================================
+   11. RENDERIZAÇÃO E EVENTOS
+   =========================================================== */
+
+var app = document.getElementById('app');
+var TITULOS = {
+  painel:'Painel do Inventário de Dados',
+  consulta:'Consulta à Sociedade',
+  publicacoes:'Publicações',
+  bases:'Bases de Dados'
+};
+
+function render(){
+  var focoId = document.activeElement && document.activeElement.id;
+  var caret = null;
+  if(focoId && document.activeElement.selectionStart != null){
+    caret = document.activeElement.selectionStart;
+  }
+
+  var miolo = state.page === 'consulta' ? paginaConsulta()
+            : state.page === 'publicacoes' ? paginaPublicacoes()
+            : state.page === 'bases' ? paginaBases()
+            : paginaPainel();
+
+  app.innerHTML = topBar() + cabecalho() + subNav() + trilha(TITULOS[state.page]) + miolo + rodape();
+
+  if(focoId){
+    var alvo = document.getElementById(focoId);
+    if(alvo){
+      alvo.focus();
+      if(caret != null && alvo.setSelectionRange){
+        try{ alvo.setSelectionRange(caret, caret); }catch(err){}
+      }
+    }
+  }
+}
+
+function alterna(chave, valor){
+  var i = state[chave].indexOf(valor);
+  if(i === -1) state[chave].push(valor); else state[chave].splice(i,1);
+}
+
+app.addEventListener('click', function(ev){
+  var el = ev.target.closest('[data-nav],[data-view],[data-pubview],[data-tipo],[data-secao],[data-toggle],[data-limpar],[data-csv]');
+  if(!el || el.tagName === 'INPUT' || el.tagName === 'A') return;
+  if(el.dataset.nav){ state.page = el.dataset.nav; window.scrollTo(0,0); return render(); }
+  if(el.dataset.csv){ return el.dataset.csv === 'pub' ? csvPublicacoes() : csvInstrumentos(); }
+  if(el.dataset.limpar){
+    if(el.dataset.limpar === 'pub'){ state.pubBusca=''; state.pubAnos=[]; state.pubCategorias=[]; }
+    else { state.busca=''; state.anos=[]; state.plataformas=[]; }
+    return render();
+  }
+  if(el.dataset.view){ state.view = el.dataset.view; return render(); }
+  if(el.dataset.pubview){ state.pubView = el.dataset.pubview; return render(); }
+  if(el.dataset.tipo){ state.tipo = el.dataset.tipo; return render(); }
+  if(el.dataset.secao){ state.secao = el.dataset.secao; return render(); }
+  if(el.dataset.toggle){ alterna(el.dataset.toggle, el.dataset.valor); return render(); }
+});
+
+app.addEventListener('input', function(ev){
+  if(ev.target.id === 'busca-instr'){ state.busca = ev.target.value; render(); }
+  else if(ev.target.id === 'busca-pub'){ state.pubBusca = ev.target.value; render(); }
+});
+
+app.addEventListener('change', function(ev){
+  if(ev.target.hasAttribute && ev.target.hasAttribute('data-graf-tabela')){
+    state.graficosTabela = ev.target.checked; render();
+  }
+});
+
+if(/[?&]embed=1/.test(location.search) || location.hash === '#embed'){
+  document.body.classList.add('embed');
+}
+
+// Dentro de um iframe, a propria pagina estica o quadro ate a altura do
+// conteudo. O ajuste costuma ser feito por script na pagina que CONTEM o
+// iframe, mas o editor do Plone remove scripts -- entao ele e feito aqui,
+// de dentro, onde o script sobrevive.
+//
+// LIMITE: so funciona se o iframe e a pagina que o contem estiverem na
+// mesma origem. Hospedando a pagina fora do dominio do portal (GitHub
+// Pages, por exemplo), window.frameElement e bloqueado pelo navegador e
+// este trecho desiste em silencio -- ai o iframe precisa de altura fixa
+// no atributo height.
+(function(){
+  if(window === window.top) return;
+  var quadro;
+  try { quadro = window.frameElement; } catch(e) { return; }
+  if(!quadro) return;
+  var ultima = 0, passos = 0;
+  function medida(){
+    return Math.max(document.documentElement.scrollHeight,
+                    document.body.scrollHeight,
+                    document.body.offsetHeight);
+  }
+  function ajusta(){
+    // Esticar o quadro muda a altura disponivel e o conteudo reflui, o que
+    // muda a medida de novo. Uma medicao so para curta. Entao cada mudanca
+    // agenda nova medicao e o processo encerra quando a altura estabiliza.
+    // A folga de 8px evita oscilar por arredondamento; o teto de 40 passos
+    // garante que isto nao vira laco infinito num layout mal comportado.
+    var h = medida();
+    if(Math.abs(h - ultima) > 8){
+      ultima = h;
+      quadro.style.height = (h + 4) + 'px';
+      if(passos++ < 40) setTimeout(ajusta, 120);
+    }
+  }
+  function remede(){ passos = 0; ajusta(); }
+  remede();
+  // Passagens tardias incondicionais: partes da pagina (graficos) so ganham
+  // altura depois, e nem toda mudanca dispara o observador.
+  [300, 800, 1500, 3000].forEach(function(ms){ setTimeout(remede, ms); });
+  window.addEventListener('resize', remede);
+  window.addEventListener('load', remede);
+  // Troca de aba e uso dos filtros mudam muito a altura: segue observando.
+  if(window.ResizeObserver){
+    var obs = new ResizeObserver(remede);
+    obs.observe(document.body);
+    obs.observe(document.documentElement);
+  }
+})();
+
+render();
+})();
+</script>
+</body>
+</html>
